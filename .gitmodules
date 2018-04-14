@@ -1,0 +1,4 @@
+[submodule "wave"]
+	path = iggie/wave
+	url = https://github.com/insanj/wave.git
+	branch = master

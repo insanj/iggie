@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="iggie/robot.png" width=75 height=75 />
+   <img src="resources/robot.png" width=75 height=75 />
    <h3 align="center">iggie</h3>
    <h4 align="center">interactive github site history</h4>
 </p>

@@ -26,6 +26,22 @@ class iggieURLBuilder {
 		var refQuery = "?ref=" + ref;
 		return precomposedURL + filename + refQuery;
 	}
+	
+	buildContentsOfAllFilesInCommitURL(ref) {
+		var urlHost = "https://api.github.com/";
+		var apiRepoPath = "repos/";
+		var apiContentsPath = "/contents/";
+		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
+		return precomposedURL;
+	}
+}
+
+class iggieFile {
+	constructor(name, url, data) {
+		this.name = name
+		this.url = url
+		this.data = data
+	}
 }
 
 class iggieNetworker {
@@ -118,6 +134,48 @@ class iggieNetworker {
 		// begin!
 		iterateGetContents(0);
 	}
+
+	getGithubContentsOfAllFilesInCommit(ref, callback) {
+		var builder = new iggieURLBuilder(username, repository);
+		var url = builder.buildContentsOfAllFilesInCommitURL(ref);
+		$.ajax({
+		  type: 'GET',
+		  url: url,
+		  dataType: 'json',
+		  success: function (result) {
+		  	var commitFiles = [];
+			var decodedFileContents = [];
+			for (var i = 0; i < result.length; i++) {
+				var file = result[i];
+			  	decodedFileContents.push(file);
+			}
+
+		  	callback(decodedFileContents);
+		  }
+		});
+	}
+
+	getGithubContentsOfAllFilesInCommits(networker, commits, callback) {
+		var history = [];
+
+		var iterateGetContents = function(i, getContents) {
+			// no-op
+		};
+		iterateGetContents = function(i, getContents) {
+			if (i >= commits.length) {
+				callback(history);
+			} else {
+				var ref = commits[i];
+				networker.getGithubContentsOfAllFilesInCommit(ref, function(files) {
+					history.push(files);
+					iterateGetContents(i+1);
+	    		});
+    		}
+		};
+
+		// begin!
+		iterateGetContents(0);
+	}
 }
 
 class iggie {
@@ -133,5 +191,14 @@ class iggie {
     			callback(commitsContents, commitsURLs);
     		});
     	});
-	}	
+	}
+
+	getHistoryOfAllFiles(callback) {
+		var networker = new iggieNetworker(this.username, this.repository);
+		networker.getGithubCommits(function(commits) {
+    		networker.getGithubContentsOfAllFilesInCommits(networker, commits, function(files) {
+    			callback(files);
+    		});
+    	});
+	}
 }

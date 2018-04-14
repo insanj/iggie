@@ -58,7 +58,7 @@
     <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
     <script src="../resources/popper.js"></script>
     <script src="../resources/bootstrap.js"></script>
-    <script src="run.js"></script>
+    <script src="iggie.js"></script>
     <script>
     	function param(name) { // https://stackoverflow.com/a/39768285
 		    return (location.search.split(name + '=')[1] || '').split('&')[0];
@@ -69,7 +69,6 @@
     	var filename = param("filename");
 
       var iggieHistory = [];
-      var iggieURLHistory = [];
     	var historian = new iggie(username, repository);
 
       var selectedHistory = 0;
@@ -94,8 +93,16 @@
           $("#back").removeClass("disabled");
         }
 
-        var historyDiv = iggieHistory[selectedHistory];
-        var historyURL = iggieURLHistory[selectedHistory];
+        var historyFiles = iggieHistory[selectedHistory];
+        var historyURL;
+        var historyHTMLURL;
+        for (var i = 0; i < historyFiles.length; i++) {
+          var file = historyFiles[i];
+          if (file.name == filename) {
+            historyURL = file.html_url;
+            historyHTMLURL = file.download_url;
+          }
+        }
 
         $("#site").html("");
         $('<iframe id="site-iframe"/>').appendTo('#site');
@@ -103,17 +110,23 @@
         $("#current-alert").html("<a class='text-primary' href='" + historyURL + "'>" + historyURL + "</a>");
         $("#go-link").attr("href", historyURL);
 
-        $("#site-iframe").contents().find('html').html(historyDiv);
+        $.ajax({
+          type: 'GET',
+          url: historyHTMLURL,
+          success: function (result) {
+            $("#site-iframe").contents().find('html').html(result);
+          }
+        });
+
       }
 
-    	historian.getHistory(filename, function(commitHistory, commitURLs) {
-        iggieHistory = commitHistory;
-        iggieURLHistory = commitURLs;
+      historian.getHistoryOfAllFiles(function(commitFiles) {
+        iggieHistory = commitFiles;
         $("#go").removeClass("disabled");
 
         setHistory(0);
         console.log("🎉 Loaded and set history!");
-    	});
+      });
 
       $("#back").on("click", function(e) {
         e.preventDefault();

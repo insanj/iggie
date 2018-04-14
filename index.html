@@ -21,7 +21,7 @@
         <div class="inner">
           <a href="http://iggie.site"><h3 class="masthead-brand text-white">🤖 iggie</h3></a>
           <nav class="nav nav-masthead justify-content-center">
-            <a class="nav-link active" href="#">⚡ Run</a>
+            <a class="nav-link active" href="/run">⚡ Run</a>
             <a class="nav-link" href="https://github.com/insanj/iggie" target=_blank>💚 Github</a>
           </nav>
         </div>
@@ -44,13 +44,13 @@
               <input type="text" id="repository" class="form-control" value="insanj.com" placeholder="repository">
           </div>
 
-          <a href="#" class="btn btn-lg btn-secondary">⚡ Run</a>
+          <a href="#" id="run" class="btn btn-lg btn-secondary">⚡ Run</a>
         </p>
       </main>
 
       <footer class="mastfoot mt-auto" style="z-index:8;">
         <div class="inner">
-            <p>(c) 2018 <a href="https://insanj.com">Julian Weiss</a> aka insanj</p>
+            <p>(c) 2018 <a href="https://insanj.com">Julian Weiss</a> aka <a href="https://twitter.com/insanj">@insanj</a></p>
         </div>
       </footer>
     </div>
@@ -117,6 +117,13 @@ function simulateTouch(cooldown) {
 }
 
 simulateTouch(1000);
+
+$("#run").on("click", function() {
+  var username = $("#username").val();
+  var repository = $("#repository").val();
+  var composedURL = "run/index.html?username=" + username + "&repository=" + repository;
+  window.location.href = composedURL;
+});
 
     </script>
 </body></html>

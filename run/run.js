@@ -61,16 +61,10 @@ class iggieNetworker {
 		  type: 'GET',
 		  url: url,
 		  dataType: 'json',
-		  success: function (result) {
-		  	var decodedContents = [];
-		  	for (var i = 0; i < result.length; i++) {
-		  		var commit = result[i];
-		  		var base64Contents = commit.content;
-		  		var contents = window.atob(base64Contents);
-				decodedContents.push(contents);
-			}
-
-		  	callback(decodedContents);
+		  success: function (commit) {
+		  	var base64Contents = commit.content;
+		  	var contents = window.atob(base64Contents);
+		  	callback(contents);
 		  }
 		});
 	}

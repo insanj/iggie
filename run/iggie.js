@@ -32,7 +32,8 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		return precomposedURL;
+		var refQuery = "?ref=" + ref;
+		return precomposedURL + refQuery;
 	}
 }
 

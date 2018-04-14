@@ -96,11 +96,16 @@
         var historyFiles = iggieHistory[selectedHistory];
         var historyURL;
         var historyHTMLURL;
+        var historyCSSURL;
         for (var i = 0; i < historyFiles.length; i++) {
           var file = historyFiles[i];
           if (file.name == filename) {
             historyURL = file.html_url;
             historyHTMLURL = file.download_url;
+          }
+
+          else if (file.name.substring(file.name.length-3) == "css") {
+            historyCSSURL = file.download_url;
           }
         }
 
@@ -113,11 +118,18 @@
         $.ajax({
           type: 'GET',
           url: historyHTMLURL,
-          success: function (result) {
-            $("#site-iframe").contents().find('html').html(result);
+          success: function (htmlResult) {
+            $("#site-iframe").contents().find('html').html(htmlResult);
+
+            $.ajax({
+              type: 'GET',
+              url: historyCSSURL,
+              success: function (cssResult) {
+                $("#site-iframe").contents().find('head').append(cssResult);
+              }
+            });
           }
         });
-
       }
 
       historian.getHistoryOfAllFiles(function(commitFiles) {

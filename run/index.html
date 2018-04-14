@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="iggie: interactive github site history">
+    <meta name="author" content="insanj">
+    <link rel="icon" type="image/png" href="../iggie/robot.png">
+
+    <title>iggie</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="../iggie/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="../iggie/cover.css" rel="stylesheet">
+  </head>
+  <body class="text-center" style="z-index: 10;">
+    <div class="cover-container d-flex h-100 p-3 mx-auto flex-column" style="z-index: 6;">
+      <header class="masthead mb-auto" style="z-index: 7;">
+        <div class="inner">
+          <a href="http://iggie.site"><h3 class="masthead-brand text-white">🤖 iggie</h3></a>
+          <nav class="nav nav-masthead justify-content-center">
+            <a class="nav-link active" href="#">⚡ Run</a>
+            <a class="nav-link" href="https://github.com/insanj/iggie" target=_blank>💚 Github</a>
+          </nav>
+        </div>
+      </header>
+
+      <main role="main" class="inner cover text-white" style="z-index: 5;">
+
+      </main>
+
+      <footer class="mastfoot mt-auto" style="z-index:8;">
+        <div class="inner">
+            <p>(c) 2018 <a href="https://insanj.com">Julian Weiss</a> aka <a href="https://twitter.com/insanj">@insanj</a></p>
+        </div>
+      </footer>
+    </div>
+
+    <canvas>
+    </canvas>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
+    <script src="../iggie/popper.js"></script>
+    <script src="../iggie/bootstrap.js"></script>
+    <script src="run.js"></script>
+    <script>
+    	function param(name) { // https://stackoverflow.com/a/39768285
+		    return (location.search.split(name + '=')[1] || '').split('&')[0];
+		}
+
+    	var username = param("username");
+    	var repository = param("repository");
+    	var filename = "index.html";
+
+    	var runner = new iggie(username, repository);
+    	var commitsURL = runner.buildCommitsURL();
+    	var commits = runner.getGithubCommits(commitsURL, function(commits) {
+    		var contentsOfCommitURL = runner.buildContentsOfCommitURL();
+    		runner.getGithubContentsOfFileInCommits(contentsOfCommitURL, filename, commits, function(commitsContents) {
+    			console.log(commitsContents);
+    		});
+    	});
+    </script>
+</body></html>

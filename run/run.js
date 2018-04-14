@@ -83,30 +83,33 @@ class iggieNetworker {
 
 		  	var encoding = file.encoding;
 		  	var decodedContent = file.content;
+		  	var fileURL = file.html_url;
 		  	if (encoding == 'base64') {
 		  		decodedContent = window.atob(decodedContent);
 		  	} else {
 		  		console.log("⚠ Unknown encoding = " + commit);
 		  	}
 
-		  	callback(decodedContent);
+		  	callback(decodedContent, fileURL);
 		  }
 		});
 	}
 
 	getGithubContentsOfFileInCommits(networker, filename, commits, callback) {
 		var history = [];
+		var historyURLs = [];
 
 		var iterateGetContents = function(i, getContents) {
 			// no-op
 		};
 		iterateGetContents = function(i, getContents) {
 			if (i >= commits.length) {
-				callback(history);
+				callback(history, historyURLs);
 			} else {
 				var ref = commits[i];
-				networker.getGithubContentsOfFileInCommit(filename, ref, function(refContents) {
+				networker.getGithubContentsOfFileInCommit(filename, ref, function(refContents, refURL) {
 					history.push(refContents);
+					historyURLs.push(refURL);
 					iterateGetContents(i+1);
 	    		});
     		}
@@ -126,8 +129,8 @@ class iggie {
 	getHistory(filename, callback) {
 		var networker = new iggieNetworker(this.username, this.repository);
 		networker.getGithubCommits(function(commits) {
-    		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents) {
-    			callback(commitsContents);
+    		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents, commitsURLs) {
+    			callback(commitsContents, commitsURLs);
     		});
     	});
 	}	

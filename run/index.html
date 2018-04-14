@@ -21,15 +21,20 @@
       <header class="masthead mb-auto" style="z-index: 7;">
         <div class="inner">
           <a href="http://iggie.site"><h3 class="masthead-brand text-white">🤖 iggie</h3></a>
+
           <nav class="nav nav-masthead justify-content-center">
             <div class="btn-group mt-2" role="group" aria-label="Basic example">
-              <button type="button" class="btn btn-secondary" id="back">Back</button>
-              <button type="button" class="btn btn-secondary" id="go">Go</button>
-              <button type="button" class="btn btn-secondary" id="forward">Forward</button>
+              <button type="button" class="btn btn-secondary disabled" id="back">Back</button>
+              <a id="go-link" target=_blank href="#"><button type="button" class="btn btn-secondary disabled" style="border-radius: 0px;" id="go">Go</button></a>
+              <button type="button" class="btn btn-secondary disabled" id="forward">Forward</button>
             </div>
           </nav>
         </div>
       </header>
+
+      <div id="current-alert" class="alert alert-primary fixed-top" style="margin-top: 100px; border-radius: 0px;">
+        Loading from Github...
+      </div>
 
       <footer class="mastfoot mt-auto" style="z-index:8;">
         <div class="inner">
@@ -59,38 +64,59 @@
     	var filename = param("filename");
 
       var iggieHistory = [];
+      var iggieURLHistory = [];
     	var historian = new iggie(username, repository);
 
       var selectedHistory = 0;
       function setHistory(delta) {
         var historyIndex = selectedHistory + delta;
-        if (historyIndex < 0 || historyIndex >= history.length) {
+        if (historyIndex < 0 || historyIndex >= iggieHistory.length) {
           console.log("bad");
           selectedHistory = 0;
         } else {
           selectedHistory = historyIndex;
         }
 
+        if (selectedHistory == 0) {
+          $("#forward").addClass("disabled");
+        } else {
+          $("#forward").removeClass("disabled");
+        }
+
+        if (selectedHistory == iggieHistory.length-1) {
+          $("#back").addClass("disabled");
+        } else {
+          $("#back").removeClass("disabled");
+        }
+
         var historyDiv = iggieHistory[selectedHistory];
+        var historyURL = iggieURLHistory[selectedHistory];
+        $("#current-alert").html("<a class='text-primary' href='" + historyURL + "'>" + historyURL + "</a>");
         $("#site").html(historyDiv);
+        $("#go-link").attr("href", historyURL);
       }
 
-    	historian.getHistory(filename, function(githubHistory) {
-        iggieHistory = githubHistory;
+    	historian.getHistory(filename, function(commitHistory, commitURLs) {
+        iggieHistory = commitHistory;
+        iggieURLHistory = commitURLs;
+        $("#go").removeClass("disabled");
+
         setHistory(0);
         console.log("🎉 Loaded and set history!");
     	});
 
-      $("#back").on("click", function() {
-        setHistory(-1);
+      $("#back").on("click", function(e) {
+        e.preventDefault();
+        if ($("#back").hasClass('disabled') == false) {
+          setHistory(1);
+        }
       });
 
-      $("#go").on("click", function() {
-
-      });
-
-      $("#forward").on("click", function() {
-        setHistory(1);
+      $("#forward").on("click", function(e) {
+        e.preventDefault();
+        if ($("#forward").hasClass('disabled') == false) {
+          setHistory(-1);
+        }
       });
     </script>
 </body></html>

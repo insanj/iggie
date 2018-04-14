@@ -4,7 +4,7 @@
 	https://github.com/insanj/iggie
 */
 
-class iggie {
+class iggieURLBuilder {
 	constructor(username, repository) {
 		this.username = username
 		this.repository = repository
@@ -18,7 +18,25 @@ class iggie {
 		return composedURL;
 	}
 
-	getGithubCommits(url, callback) {
+	buildContentsOfCommitURL(filename, ref) {
+		var urlHost = "https://api.github.com/";
+		var apiRepoPath = "repos/";
+		var apiContentsPath = "/contents/";
+		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
+		var refQuery = "?ref=" + ref;
+		return precomposedURL + filename + refQuery;
+	}
+}
+
+class iggieNetworker {
+	constructor(username, repository) {
+		this.username = username
+		this.repository = repository
+	}
+
+	getGithubCommits(callback) {
+		var builder = new iggieURLBuilder(username, repository);
+		var url = builder.buildCommitsURL();
 		$.ajax({
 		  type: 'GET',
 		  url: url,
@@ -36,34 +54,28 @@ class iggie {
 		});
 	}
 
-	buildContentsOfCommitURL(filename, ref) {
-		var urlHost = "https://api.github.com/";
-		var apiRepoPath = "repos/";
-		var apiContentsPath = "/contents/";
-		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		var refQuery = "?ref=" + ref;
-		return precomposedURL + filename + refQuery;
-	}
-
-	getGithubContentsOfFileInCommit(url, filename, ref, callback) {
+	getGithubContentsOfFileInCommit(filename, ref, callback) {
+		var builder = new iggieURLBuilder(username, repository);
+		var url = builder.buildContentsOfCommitURL(filename, ref);
 		$.ajax({
 		  type: 'GET',
 		  url: url,
 		  dataType: 'json',
 		  success: function (result) {
 		  	var decodedContents = [];
-		  	$result.each(function( index ) {
+		  	for (var i = 0; i < result.length; i++) {
+		  		var commit = result[i];
 		  		var base64Contents = commit.content;
 		  		var contents = window.atob(base64Contents);
 				decodedContents.push(contents);
-			});
+			}
 
 		  	callback(decodedContents);
 		  }
 		});
 	}
 
-	getGithubContentsOfFileInCommits(url, filename, commits, callback) {
+	getGithubContentsOfFileInCommits(networker, filename, commits, callback) {
 		var history = [];
 
 		var iterateGetContents = function(i, getContents) {
@@ -74,13 +86,30 @@ class iggie {
 				callback(history);
 			} else {
 				var ref = commits[i];
-				var contents = getContents(url, filename, ref, function(refContents) {
+				networker.getGithubContentsOfFileInCommit(filename, ref, function(refContents) {
 					history.push(refContents);
 					iterateGetContents(i+1);
 	    		});
     		}
 		};
 
-		iterateGetContents(0, this.getGithubContentsOfFileInCommit);
+		// begin!
+		iterateGetContents(0);
 	}
+}
+
+class iggie {
+	constructor(username, repository) {
+		this.username = username
+		this.repository = repository
+	}
+
+	getHistory(filename, callback) {
+		var networker = new iggieNetworker(this.username, this.repository);
+		networker.getGithubCommits(function(commits) {
+    		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents) {
+    			callback(commitsContents);
+    		});
+    	});
+	}	
 }

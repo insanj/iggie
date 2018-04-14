@@ -57,13 +57,9 @@
     	var repository = param("repository");
     	var filename = "index.html";
 
-    	var runner = new iggie(username, repository);
-    	var commitsURL = runner.buildCommitsURL();
-    	var commits = runner.getGithubCommits(commitsURL, function(commits) {
-    		var contentsOfCommitURL = runner.buildContentsOfCommitURL();
-    		runner.getGithubContentsOfFileInCommits(contentsOfCommitURL, filename, commits, function(commitsContents) {
-    			console.log(commitsContents);
-    		});
+    	var historian = new iggie(username, repository);
+    	historian.getHistory(filename, function(history) {
+    		console.log("history = " + history);
     	});
     </script>
 </body></html>

@@ -97,6 +97,10 @@ html {
   width: 100px;
 }
 
+#github {
+  width: inherit;
+}
+
 
 /*
  * Footer

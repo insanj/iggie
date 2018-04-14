@@ -1,10 +1,34 @@
 
+html, body, .alert {
+	min-width: 220px !important;
+}
+
+#current-alert {
+	position: absolute;
+	top: 100px;
+	left: 0px;
+	right: 0px;
+
+	border-radius: 0px;
+
+	z-index: 15;
+}
+
 #site {
 	background-color: rgba(51,51,50,1);
 
-	position: fixed;
+	position: absolute;
 	top: 100px;
 	left: 0px;
 	right: 0px;
 	bottom: 0px;
+}
+
+#site iframe {
+	margin-top: 50px;
+	width: 100%;
+	height: 100%;
+
+	background-color: white;
+	border: none;
 }

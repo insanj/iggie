@@ -38,7 +38,7 @@
         </div>
       </header>
 
-      <div id="current-alert" class="alert alert-primary fixed-top" style="margin-top: 100px; border-radius: 0px;">
+      <div id="current-alert" class="alert alert-primary">
         Loading from Github...
       </div>
 
@@ -51,7 +51,6 @@
 
     <div id="site">
     </div>
-
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
@@ -97,9 +96,14 @@
 
         var historyDiv = iggieHistory[selectedHistory];
         var historyURL = iggieURLHistory[selectedHistory];
+
+        $("#site").html("");
+        $('<iframe id="site-iframe"/>').appendTo('#site');
+
         $("#current-alert").html("<a class='text-primary' href='" + historyURL + "'>" + historyURL + "</a>");
-        $("#site").html(historyDiv);
         $("#go-link").attr("href", historyURL);
+
+        $("#site-iframe").contents().find('html').html(historyDiv);
       }
 
     	historian.getHistory(filename, function(commitHistory, commitURLs) {

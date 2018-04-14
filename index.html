@@ -121,7 +121,8 @@ simulateTouch(1000);
 $("#run").on("click", function() {
   var username = $("#username").val();
   var repository = $("#repository").val();
-  var composedURL = "run/index.html?username=" + username + "&repository=" + repository;
+  var filename = "index.html"; // todo: figure out how to make this, and the rest of the form, work
+  var composedURL = "run/index.html?username=" + username + "&repository=" + repository + "&filename=" + filename;
   window.location.href = composedURL;
 });
 

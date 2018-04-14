@@ -14,6 +14,7 @@
 
     <!-- Custom styles for this template -->
     <link href="../iggie/cover.css" rel="stylesheet">
+    <link href="run.css" rel="stylesheet">
   </head>
   <body class="text-center" style="z-index: 10;">
     <div class="cover-container d-flex h-100 p-3 mx-auto flex-column" style="z-index: 6;">
@@ -21,15 +22,14 @@
         <div class="inner">
           <a href="http://iggie.site"><h3 class="masthead-brand text-white">🤖 iggie</h3></a>
           <nav class="nav nav-masthead justify-content-center">
-            <a class="nav-link active" href="#">⚡ Run</a>
-            <a class="nav-link" href="https://github.com/insanj/iggie" target=_blank>💚 Github</a>
+            <div class="btn-group mt-2" role="group" aria-label="Basic example">
+              <button type="button" class="btn btn-secondary" id="back">Back</button>
+              <button type="button" class="btn btn-secondary" id="go">Go</button>
+              <button type="button" class="btn btn-secondary" id="forward">Forward</button>
+            </div>
           </nav>
         </div>
       </header>
-
-      <main role="main" class="inner cover text-white" style="z-index: 5;">
-
-      </main>
 
       <footer class="mastfoot mt-auto" style="z-index:8;">
         <div class="inner">
@@ -38,8 +38,9 @@
       </footer>
     </div>
 
-    <canvas>
-    </canvas>
+    <div id="site">
+    </div>
+
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
@@ -51,15 +52,45 @@
     <script>
     	function param(name) { // https://stackoverflow.com/a/39768285
 		    return (location.search.split(name + '=')[1] || '').split('&')[0];
-		}
+		  }
 
     	var username = param("username");
     	var repository = param("repository");
-    	var filename = "index.html";
+    	var filename = param("filename");
 
+      var iggieHistory = [];
     	var historian = new iggie(username, repository);
-    	historian.getHistory(filename, function(history) {
-    		console.log("history = " + history);
+
+      var selectedHistory = 0;
+      function setHistory(delta) {
+        var historyIndex = selectedHistory + delta;
+        if (historyIndex < 0 || historyIndex >= history.length) {
+          console.log("bad");
+          selectedHistory = 0;
+        } else {
+          selectedHistory = historyIndex;
+        }
+
+        var historyDiv = iggieHistory[selectedHistory];
+        $("#site").html(historyDiv);
+      }
+
+    	historian.getHistory(filename, function(githubHistory) {
+        iggieHistory = githubHistory;
+        setHistory(0);
+        console.log("🎉 Loaded and set history!");
     	});
+
+      $("#back").on("click", function() {
+        setHistory(-1);
+      });
+
+      $("#go").on("click", function() {
+
+      });
+
+      $("#forward").on("click", function() {
+        setHistory(1);
+      });
     </script>
 </body></html>

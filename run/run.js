@@ -61,10 +61,35 @@ class iggieNetworker {
 		  type: 'GET',
 		  url: url,
 		  dataType: 'json',
-		  success: function (commit) {
-		  	var base64Contents = commit.content;
-		  	var contents = window.atob(base64Contents);
-		  	callback(contents);
+		  success: function (result) {
+		  	var file;
+		  	if ($.isArray(result)) {
+		  		var commitFiles = result;
+			  	for (var i = 0; i < commitFiles.length; i++) {
+			  		var commitFile = commitFiles[i];
+			  		if (commitFile.name == filename) {
+			  			file = commitFile;
+			  			break;
+			  		}
+			  	}
+
+			  	if (file == null) {
+			  		console.log("⚠ Unable to find filename = " + filename);
+			  		return;
+			  	}
+		  	} else {
+		  		file = result;
+		  	}
+
+		  	var encoding = file.encoding;
+		  	var decodedContent = file.content;
+		  	if (encoding == 'base64') {
+		  		decodedContent = window.atob(decodedContent);
+		  	} else {
+		  		console.log("⚠ Unknown encoding = " + commit);
+		  	}
+
+		  	callback(decodedContent);
 		  }
 		});
 	}

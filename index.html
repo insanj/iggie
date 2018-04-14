@@ -78,11 +78,38 @@ $(function () {
     <script type="text/javascript" src="iggie/wave/js/libs/CMControl.min.js"></script>
     <script type="text/javascript" src="iggie/wave/js/Wave.js"></script>
     <script>
-window.onload = Wave.init;
-
+window.onload = Wave.init
 window.setTimeout(function () {
 $(".sidebar").remove();
 $("canvas").css({"position" : "fixed", "top" : 0, "left" : 0, "right" : 0, "bottom" : 0, "z-index" : 0 });
 }, 50);
+
+function simulateTouch(cooldown) {
+  $canvas = document.getElementsByTagName('canvas')[0];
+  var e = document.createEvent('UIEvent');
+// var e = $.Event("mousedown", { pageX: randX, pageY:randY } );
+
+  var randX = Math.floor(Math.random() * $canvas.width) + 1;
+  var randY = Math.floor(Math.random() * $canvas.height) + 1;
+
+  e.initUIEvent('mousedown', true, true);
+  e.pageX = randX;
+  e.pageY = randY;
+  e.touches = [{pageX: randX, pageY: randY}];
+  $canvas.dispatchEvent(e);
+
+  setTimeout(function () {
+    e.initUIEvent('mouseup', true, true);
+    $canvas.dispatchEvent(e);
+    
+    setTimeout(function() {
+      simulateTouch(cooldown);
+    }, cooldown)
+
+  }, 100);
+}
+
+simulateTouch(1000);
+
     </script>
 </body></html>

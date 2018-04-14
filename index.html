@@ -92,14 +92,21 @@ function simulateTouch(cooldown) {
   var randX = Math.floor(Math.random() * $canvas.width) + 1;
   var randY = Math.floor(Math.random() * $canvas.height) + 1;
 
-  e.initUIEvent('mousedown', true, true);
+  var downEventName = 'mousedown';
+  var upEventName = 'mouseup';
+  if (!!('ontouchstart' in window)) {
+    downEventName = 'touchstart';
+    upEventName = 'touchend';
+  }
+
+  e.initUIEvent(downEventName, true, true);
   e.pageX = randX;
   e.pageY = randY;
   e.touches = [{pageX: randX, pageY: randY}];
   $canvas.dispatchEvent(e);
 
   setTimeout(function () {
-    e.initUIEvent('mouseup', true, true);
+    e.initUIEvent(upEventName, true, true);
     $canvas.dispatchEvent(e);
     
     setTimeout(function() {

@@ -1,6 +1,7 @@
 import os
 from git import Repo
 
+# python automatic site history; the first iteration of iggie
 class pash:
 	git_url = "https://github.com/insanj/insanj.com"
 	git_branch = "master"

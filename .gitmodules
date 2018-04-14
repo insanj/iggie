@@ -1,0 +1,4 @@
+[submodule "wave"]
+	path = resources/wave
+	url = https://github.com/insanj/wave
+	branch = master

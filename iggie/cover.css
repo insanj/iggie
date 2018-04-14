@@ -24,25 +24,14 @@ a:hover {
  * Base structure
  */
 
-html {
+html, body {
   height: 100%;
-  background-color: rgba(240,58,23,1.0);
-}
-body {
-  height: 100%;
-  background-color: rgba(245,121,99,0.4);
+  background-color: #F25336;
 }
 
-body {
-  display: -ms-flexbox;
-  display: -webkit-box;
-  display: flex;
-  -ms-flex-pack: center;
-  -webkit-box-pack: center;
-  justify-content: center;
+html {
   color: #fff;
-  text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5);
-  box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5);
+  text-shadow: 0px 0px 5px rgba(0, 0, 0, .1);
 }
 
 .cover-container {
@@ -104,6 +93,10 @@ body {
   font-weight: 700;
 }
 
+#github input {
+  width: 100px;
+}
+
 
 /*
  * Footer
@@ -111,3 +104,4 @@ body {
 .mastfoot {
   color: rgba(255, 255, 255, .5);
 }
+

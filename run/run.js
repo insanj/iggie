@@ -77,7 +77,13 @@ historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 		$("#current-alert").removeClass("alert-primary");
 		$("#current-alert").addClass("alert-danger");
 
-		$("#current-alert").html("<a id='error-alert' class='text-primary' href='#'>" + error + "</a>");
+		$("#current-alert").html(error);
+	} else if (commitRefs == null || commitFiles == null) {
+		historyError = "🙅‍ Github rejected our request!";
+		$("#current-alert").removeClass("alert-primary");
+		$("#current-alert").addClass("alert-danger");
+
+		$("#current-alert").html(historyError);
 	} else {
 		$("#current-alert").removeClass("alert-danger");
 		$("#current-alert").addClass("alert-primary");

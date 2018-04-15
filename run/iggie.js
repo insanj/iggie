@@ -219,6 +219,18 @@ class iggieNetworker {
 		});
 	}
 
+	getContentForBlobURL(url, callback) {
+		$.ajax({
+		  type: 'GET',
+		  url: url,
+		  dataType: 'json',
+		  success: function (result) {
+		  	var decodedContent = window.atob(result.content);
+		  	callback(decodedContent);
+		  }
+		});
+	}
+
 	crawlHTMLAndResolveURLs(networker, commit, commitHTML, callback) {
 		//var gitPaths = [];
 		//var gitPathDict = {};
@@ -232,7 +244,9 @@ class iggieNetworker {
 
 				if (file.type == "blob") {
 					console.log("replacing " + file.path + " with " + file.url + " which is at index = " + crawledHTML.indexOf(file.path));
-					crawledHTML = crawledHTML.replace(file.path, file.url);
+					
+					//networker.getContentForBlobURL(file.url, function(content) {
+					crawledHTML = crawledHTML.replace(file.path, content);
 				}
 			}
 

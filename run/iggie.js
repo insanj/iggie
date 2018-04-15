@@ -324,6 +324,10 @@ class iggieNetworker {
 			knownFilesDict[knownFile.path] = knownFile;
 		}
 
+		var rawgitDownloadURL = function(githubDownloadURL) {
+			return githubDownloadURL.replace("raw.githubusercontent.com", "rawgit.com");
+		}
+
 		var iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
 		}
 		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
@@ -338,7 +342,8 @@ class iggieNetworker {
 				networker.findFullFileForPath(crawlingFile.path, commit, knownFilesDict, function(crawlingFoundFile, newlyKnownFiles) {
 					knownFilesDict = newlyKnownFiles;
 					if (crawlingFoundFile != null) {
-						var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, crawlingFoundFile.download_url);
+						var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
+						var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, downloadURL);
 						console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + crawlingFoundFile.download_url);
 						iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, iterateCallback);
 					}

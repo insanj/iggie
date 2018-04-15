@@ -176,6 +176,9 @@ class iggieNetworker {
 		  	}
 
 		  	callback(file);
+		  },
+		  error: function ( xhr, status, error) {
+			callback(null);
 		  }
 		});
 	}
@@ -308,18 +311,20 @@ class iggieNetworker {
 		// and the rest of the files to the param dict for the rest of the
 		// loop. Then, all paths should be replaced with resolved download_urls!
 		//
+
+		var fullFile;
 		if (alreadyFullFiles == null) {
 			console.log("alreadyFullFiles null :( filePath =" + filePath);
-			alreadyFullFiles = {};
+		} else {
+			fullFile = alreadyFullFiles[filePath]
 		}
 
-		var fullFile = alreadyFullFiles[filePath];
 		if (fullFile != null) {
 			callback(fullFile);
 		} else {
 			this.getGithubFileInCommit(filePath, commit, function(foundFullFile) {
 				var newFullFiles = alreadyFullFiles;
-				if (foundFullFile != null) {
+				if (foundFullFile != null && newFullFiles != null) {
 					newFullFiles[foundFullFile.path] = foundFullFile;
 				}
 
@@ -339,33 +344,31 @@ class iggieNetworker {
 			return githubDownloadURL.replace("raw.githubusercontent.com", "rawgit.com");
 		}
 
-		var iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
+		var iterateGithubTreeFile = function(iterateNetworker, treeFiles, i, crawlingHTML, iterateCallback) {
 		}
-		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, crawlingKnownFiles, iterateCallback) {
+		iterateGithubTreeFile = function(iterateNetworker, treeFiles, i, crawlingHTML, crawlingKnownFiles, iterateCallback) {
 			if (i < 0 || i >= treeFiles.length) {
 				iterateCallback(crawlingHTML);
 			} else {
 				var crawlingFile = treeFiles[i];
 				if (crawlingFile == null) {
 					console.log("Found null file while crawling = " + crawlingFile);
-					iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
+					iterateGithubTreeFile(iterateNetworker, treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
 				} else {
-					var pathWithSingleQuotes = "'" + crawlingFile.path + "'";
-					var pathWithDoubleQuotes = '"' + crawlingFile.path + '"';
+					var encodedPath = crawlingFile.path.replace(" ", "%20");
+					var pathWithSingleQuotes = "'" + encodedPath + "'";
+					var pathWithDoubleQuotes = '"' + encodedPath + '"';
 
-						// here we have to be stricter; the paths should sometimes force replaced if they match
-						// with confidence, such as a "../" situation
-						//---
 					// make sure the END of the path is found, surrounded by quotes, and thus, NOT a part
 					// of a larger file. we also ensure this by only replacing blobs, but that does not
 					// mean the HTML file doesn't coincidentally have paths that contain blob download URLs!
 					var singleQuotesFound = crawlingHTML.indexOf(pathWithSingleQuotes) >= 0;
 					var doubleQuotesFound = crawlingHTML.indexOf(pathWithDoubleQuotes) >= 0;
-					var regularPathFound = crawlingHTML.indexOf(crawlingFile.path) >= 0;
+					var regularPathFound = crawlingHTML.indexOf(encodedPath) >= 0;
 					var filePathIsInHTML = singleQuotesFound == true || doubleQuotesFound == true;
 
 					if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
-						networker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
+						iterateNetworker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
 							if (crawlingFoundFile != null) {
 								var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
 
@@ -377,11 +380,17 @@ class iggieNetworker {
 
 								var newlyCrawlingHTML = crawlingHTMLReplacement;
 								console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + downloadURL);
-								iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, newlyKnownFiles, iterateCallback);
+
+								var realKnownFiles = newlyKnownFiles;
+								if (realKnownFiles == null) {
+									realKnownFiles = crawlingKnownFiles;
+								}
+
+								iterateGithubTreeFile(iterateNetworker, treeFiles, ++i, newlyCrawlingHTML, realKnownFiles, iterateCallback);
 							}
 						});
 					} else {
-						iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
+						iterateGithubTreeFile(iterateNetworker, treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
 					}
 				}
 			}
@@ -389,7 +398,7 @@ class iggieNetworker {
 
 		networker.getGithubTreeForCommit(commit, function(treeResult) {
 			var totalIterations = treeResult.length-1;
-			iterateGithubTreeFile(treeResult, 0, commitHTML, knownFilesDict, function(crawledHTML) {
+			iterateGithubTreeFile(networker, treeResult, 0, commitHTML, knownFilesDict, function(crawledHTML) {
 				callback(crawledHTML);
 			});	
 		});

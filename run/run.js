@@ -10,16 +10,49 @@ function param(name) { // https://stackoverflow.com/a/39768285
 
 var loadingDivString = '<div class="sk-wave"><div class="sk-rect sk-rect1"></div><div class="sk-rect sk-rect2"></div><div class="sk-rect sk-rect3"></div><div class="sk-rect sk-rect4"></div><div class="sk-rect sk-rect5"></div></div>';
 function setLoadingString(str) {
+	$("#current-alert").removeClass("alert-danger");
+	$("#current-alert").removeClass("alert-success");
+	$("#current-alert").addClass("alert-primary");
+
 	$("#current-alert").html(loadingDivString + str);
 }
 
+function setErrorString(str) {
+	$("#current-alert").removeClass("alert-danger");
+	$("#current-alert").removeClass("alert-sucess");
+	$("#current-alert").addClass("alert-danger");
+
+	$("#current-alert").html("⚠" + str);
+}
+
+function setSuccessURL(url) {
+	$("#current-alert").removeClass("alert-danger");
+	$("#current-alert").removeClass("alert-primary");
+	$("#current-alert").addClass("alert-success");
+
+	$("#current-alert").html("<a class='text-primary' href='" + url + "'>" + url + "</a>");
+}
+
 var updateHistoryUI = function(displayURL, html) {
-	$("#current-alert").html("<a class='text-primary' href='" + displayURL + "'>" + displayURL + "</a>");
 	$("#go-link").attr("href", displayURL);
 
 	$("#site").html("");
 	$('<iframe id="site-iframe"/>').appendTo('#site');
-	$("#site-iframe").contents().find('html').html(html);
+
+	var deploySite = function(siteHTML, attempts) {
+		if (attempts <= 0) {
+			setErrorString("😭 iggie ran into a problem deploying the finished site!");
+		} else {
+			try {
+				$("#site-iframe").contents().find('html').html(siteHTML);
+				setSuccessURL(displayURL);
+			} catch (error) {
+				deploySite(siteHTML, --attempts);
+			}
+		}
+	}
+
+	deploySite(html, 5); // sometimes, it just takes a while...
 }
 
 ///
@@ -67,6 +100,15 @@ function setHistory(delta) {
 	});
 }
 
+function safeSetHistory(delta) {
+	try {
+		setHistory(delta);
+	} catch(error) {
+		setErrorString("😭 iggie ran into an issue rendering the finished site.");
+		console.log("⚠ safeSetHistory error: " + error);
+	}
+}
+
 //
 
 setLoadingString("⬇ Connecting to Github...");
@@ -75,25 +117,16 @@ var historyError;
 historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 	if (error != null) {
 		historyError = error;
-		$("#current-alert").removeClass("alert-primary");
-		$("#current-alert").addClass("alert-danger");
-
-		$("#current-alert").html(error);
+		setErrorString(historyError);
 	} else if (commitRefs == null || commitFiles == null) {
 		historyError = "🙅‍ Github rejected our request!";
-		$("#current-alert").removeClass("alert-primary");
-		$("#current-alert").addClass("alert-danger");
-
-		$("#current-alert").html(historyError);
+		setErrorString(historyError);
 	} else {
-		$("#current-alert").removeClass("alert-danger");
-		$("#current-alert").addClass("alert-primary");
-
 		iggieRefHistory = commitRefs;
 		iggieHistory = commitFiles;
 		$("#go").removeClass("disabled");
 
-		setHistory(0);
+		safeSetHistory(0);
 		console.log("🎉 Loaded and set history!");
 	}
 });
@@ -102,21 +135,21 @@ historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 //
 
 $("body").on("click", "#error-alert",  function(e) {
-		e.preventDefault();
-		alert(historyError);
+	e.preventDefault();
+	alert(historyError);
 })
 
 $("#back").on("click", function(e) {
 	e.preventDefault();
 	if ($("#back").hasClass('disabled') == false) {
-		setHistory(1);
+		safeSetHistory(1);
 	}
 });
 
 $("#forward").on("click", function(e) {
 	e.preventDefault();
 	if ($("#forward").hasClass('disabled') == false) {
-		setHistory(-1);
+		safeSetHistory(-1);
 	}
 });
 
@@ -124,13 +157,13 @@ $(document).keydown(function(e) {
 	e.preventDefault();
 	if (e.which == 37) { // left 
 		if ($("#back").hasClass('disabled') == false) {
-				setHistory(1);
+			safeSetHistory(1);
 		}
 	}
 
 	else if (e.which == 39) { // right
 		if ($("#forward").hasClass('disabled') == false) {
-				setHistory(-1);
+			safeSetHistory(-1);
 		}
 	}
 });

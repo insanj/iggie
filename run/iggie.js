@@ -267,16 +267,21 @@ class iggieNetworker {
 	}
 
 	getContentsForURL(getURL, getCallback) {
-		$.ajax({
-			type: 'GET',
-			url: getURL,
-			success: function (getURLResult) {
-				getCallback(getURLResult);
-			},
-			error: function ( xhr, status, error) {
-				getCallback(null);
-			}
-		});
+		try {
+			$.ajax({
+				type: 'GET',
+				url: getURL,
+				success: function (getURLResult) {
+					getCallback(getURLResult);
+				},
+				error: function ( xhr, status, error) {
+					getCallback(null);
+				}
+			});
+		} catch (err) {
+			console.log("⚠ getContentsForURL undefined result for url (" + getURL + ") = " + err);
+			getCallback(null);
+		}
 	}
 
 	getContentForBlobURL(url, callback) {

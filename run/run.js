@@ -27,15 +27,16 @@ var updateHistoryUI = function(displayURL, html) {
 var username = param("username");
 var repository = param("repository");
 var filename = param("filename");
+var auth = new iggieGithubAuth("ddd03fe93afa0b9612aa", "fe7bba0464c06e72d02a417af28b1f9dbc744b6e");
+
+var historian = new iggie(username, repository, auth);
+setLoadingString("🗃 Getting ready to dance...");
+
+/// 
 
 var iggieHistory = [];
 var iggieRefHistory = [];
 var selectedHistory = 0;
-
-var historian = new iggie(username, repository);
-setLoadingString("🗃 Getting ready to dance...");
-
-/// 
 
 function setHistory(delta) {	
 	var historyIndex = selectedHistory + delta;

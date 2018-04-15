@@ -5,16 +5,13 @@
 */
 
 class iggieGithubAuth {
-	clientId() {
-		return "ddd03fe93afa0b9612aa";
-	}
-
-	clientSecret() {
-		return "fe7bba0464c06e72d02a417af28b1f9dbc744b6e";
+	constructor(clientId, clientSecret) {
+		this.clientId = clientId;
+		this.clientSecret = clientSecret;
 	}
 
 	clientURLQueryString() {
-		return "client_id="+ this.clientId() +"&client_secret=" + this.clientSecret();
+		return "client_id="+ this.clientId +"&client_secret=" + this.clientSecret;
 	}
 
 	appendClientURLQueryString(str) {
@@ -27,10 +24,10 @@ class iggieGithubAuth {
 }
 
 class iggieURLBuilder {
-	constructor(username, repository) {
-		this.username = username
-		this.repository = repository
-		this.auth = new iggieGithubAuth();
+	constructor(username, repository, auth) {
+		this.username = username;
+		this.repository = repository;
+		this.auth = auth;
 	}
 
 	buildCommitsURL() {
@@ -81,13 +78,14 @@ class iggieURLBuilder {
 }
 
 class iggieNetworker {
-	constructor(username, repository) {
-		this.username = username
-		this.repository = repository
+	constructor(username, repository, auth) {
+		this.username = username;
+		this.repository = repository;
+		this.auth = auth;
 	}
 
 	getGithubCommits(callback) {
-		var builder = new iggieURLBuilder(username, repository);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
 		var url = builder.buildCommitsURL();
 		$.ajax({
 		  type: 'GET',
@@ -110,7 +108,7 @@ class iggieNetworker {
 	}
 
 	getGithubContentsOfFileInCommit(filename, ref, callback) {
-		var builder = new iggieURLBuilder(username, repository);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
 		var url = builder.buildContentsOfCommitURL(filename, ref);
 		$.ajax({
 		  type: 'GET',
@@ -151,7 +149,7 @@ class iggieNetworker {
 	}
 
 	getGithubFileInCommit(path, ref, callback) {
-		var builder = new iggieURLBuilder(username, repository);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
 		var url = builder.buildGetFileInCommitURL(path, ref);
 		$.ajax({
 		  type: 'GET',
@@ -207,7 +205,7 @@ class iggieNetworker {
 	}
 
 	getGithubContentsOfAllFilesInCommit(ref, callback) {
-		var builder = new iggieURLBuilder(username, repository);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
 		var url = builder.buildContentsOfAllFilesInCommitURL(ref);
 		$.ajax({
 		  type: 'GET',
@@ -249,7 +247,7 @@ class iggieNetworker {
 	}
 
 	getGithubTreeForCommit(ref, callback) {
-		var builder = new iggieURLBuilder(username, repository);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
 		var url = builder.buildTreeForCommitURL(ref);
 
 		$.ajax({
@@ -268,12 +266,15 @@ class iggieNetworker {
 		});
 	}
 
-	getContentsForURL(url, callback) {
+	getContentsForURL(getURL, getCallback) {
 		$.ajax({
 			type: 'GET',
-			url: url,
-			success: function (htmlResult) {
-				callback(htmlResult);
+			url: getURL,
+			success: function (getURLResult) {
+				getCallback(getURLResult);
+			},
+			error: function ( xhr, status, error) {
+				getCallback(null);
 			}
 		});
 	}
@@ -302,6 +303,11 @@ class iggieNetworker {
 		// and the rest of the files to the param dict for the rest of the
 		// loop. Then, all paths should be replaced with resolved download_urls!
 		//
+		if (alreadyFullFiles == null) {
+			console.log("alreadyFullFiles null :( filePath =" + filePath);
+			alreadyFullFiles = {};
+		}
+
 		var fullFile = alreadyFullFiles[filePath];
 		if (fullFile != null) {
 			callback(fullFile);
@@ -330,32 +336,44 @@ class iggieNetworker {
 
 		var iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
 		}
-		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
+		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, crawlingKnownFiles, iterateCallback) {
 			if (i < 0 || i >= treeFiles.length) {
 				iterateCallback(crawlingHTML);
 			}
 
 			var crawlingFile = treeFiles[i];
-			var filePathIsInHTML = crawlingHTML.indexOf(crawlingFile.path) >= 0;
-
-			if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
-				networker.findFullFileForPath(crawlingFile.path, commit, knownFilesDict, function(crawlingFoundFile, newlyKnownFiles) {
-					knownFilesDict = newlyKnownFiles;
-					if (crawlingFoundFile != null) {
-						var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
-						var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, downloadURL);
-						console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + crawlingFoundFile.download_url);
-						iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, iterateCallback);
-					}
-				});
+			if (crawlingFile == null) {
+				console.log("Found null file while crawling = " + crawlingFile);
 			} else {
-				iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, iterateCallback);
+				/*var pathWithSingleQuotes = "'" + crawlingFile.path + "'";
+				var pathWithDoubleQuotes = '"' + crawlingFile.path + '"';
+
+				// make sure the END of the path is found, surrounded by quotes, and thus, NOT a part
+				// of a larger file. we also ensure this by only replacing blobs, but that does not
+				// mean the HTML file doesn't coincidentally have paths that contain blob download URLs!
+				var singleQuotesFound = crawlingHTML.indexOf(pathWithSingleQuotes) >= 0;
+				var doubleQuotesFound = crawlingHTML.indexOf(pathWithDoubleQuotes) >= 0;*/
+				var regularPathFound = crawlingHTML.indexOf(crawlingFile.path) >= 0;
+				var filePathIsInHTML = regularPathFound; //pathWithSingleQuotes || pathWithDoubleQuotes;
+
+				if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
+					networker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
+						if (crawlingFoundFile != null) {
+							var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
+							var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, downloadURL);
+							console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + crawlingFoundFile.download_url);
+							iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, newlyKnownFiles, iterateCallback);
+						}
+					});
+				} else {
+					iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
+				}
 			}
-		}
+		} // end iterateGithubTreeFile()
 
 		networker.getGithubTreeForCommit(commit, function(treeResult) {
 			var totalIterations = treeResult.length-1;
-			iterateGithubTreeFile(treeResult, 0, commitHTML, function(crawledHTML) {
+			iterateGithubTreeFile(treeResult, 0, commitHTML, knownFilesDict, function(crawledHTML) {
 				callback(crawledHTML);
 			});	
 		});
@@ -363,13 +381,14 @@ class iggieNetworker {
 }
 
 class iggie {
-	constructor(username, repository) {
-		this.username = username
-		this.repository = repository
+	constructor(username, repository, auth) {
+		this.username = username;
+		this.repository = repository;
+		this.auth = auth;
 	}
 
 	getHistory(filename, callback) {
-		var networker = new iggieNetworker(this.username, this.repository);
+		var networker = new iggieNetworker(this.username, this.repository, this.auth);
 		networker.getGithubCommits(function(commits, error) {
     		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents, commitsURLs) {
     			callback(commitsContents, commitsURLs);
@@ -378,7 +397,7 @@ class iggie {
 	}
 
 	getHistoryOfAllFiles(callback) {
-		var networker = new iggieNetworker(this.username, this.repository);
+		var networker = new iggieNetworker(this.username, this.repository, this.auth);
 		networker.getGithubCommits(function(commits, error) {
 			if (error != null) {
 				callback(null, error);
@@ -417,7 +436,7 @@ class iggie {
 			}
 		}
 
-		var networker = new iggieNetworker(this.username, this.repository);
+		var networker = new iggieNetworker(this.username, this.repository, this.auth);
 		networker.getContentsForURL(historyHTMLFile.download_url, function(results) {
 			setLoadingString("🎉 Finished up homepage search, downloading additional resources...");	
 

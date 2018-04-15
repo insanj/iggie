@@ -28,7 +28,7 @@ function setErrorString(str) {
 function setSuccessURL(url) {
 	$("#current-alert").removeClass("alert-danger");
 	$("#current-alert").removeClass("alert-primary");
-	$("#current-alert").addClass("alert-success");
+	$("#current-alert").addClass("alert-primary");
 
 	$("#current-alert").html("<a class='text-primary' href='" + url + "'>" + url + "</a>");
 }
@@ -41,12 +41,14 @@ var updateHistoryUI = function(displayURL, html) {
 
 	var deploySite = function(siteHTML, attempts) {
 		if (attempts <= 0) {
-			setErrorString("😭 iggie ran into a problem deploying the finished site!");
+			console.log("⚠ Giving up deployment!");
+			setSuccessURL(displayURL);
 		} else {
 			try {
 				$("#site-iframe").contents().find('html').html(siteHTML);
 				setSuccessURL(displayURL);
 			} catch (error) {
+				console.log("⚠ Deploy site error = " + error);
 				deploySite(siteHTML, --attempts);
 			}
 		}

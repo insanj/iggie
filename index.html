@@ -145,7 +145,7 @@ function showAlert(message) {
   $("main").append(alertDiv);
 }
 
-$("#run").on("click", function() {
+function run() {
   var username = $("#username").val();
   var repository = $("#repository").val();
 
@@ -158,7 +158,7 @@ $("#run").on("click", function() {
     var composedURL = "run/index.html?username=" + username + "&repository=" + repository + "&filename=" + filename;
     window.location.href = composedURL;
   }
-});
+}
 
 window.onload = Wave.init
 $(function () {
@@ -177,5 +177,15 @@ $(function () {
   });
 });
 
+$("#run").on("click", function() {
+  run();
+});
+
+$(document).keydown(function(e) {
+  e.preventDefault();
+  if (e.which == 13) { // right
+    run();
+  }
+});
     </script>
 </body></html>

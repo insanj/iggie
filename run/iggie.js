@@ -344,34 +344,45 @@ class iggieNetworker {
 		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, crawlingKnownFiles, iterateCallback) {
 			if (i < 0 || i >= treeFiles.length) {
 				iterateCallback(crawlingHTML);
-			}
-
-			var crawlingFile = treeFiles[i];
-			if (crawlingFile == null) {
-				console.log("Found null file while crawling = " + crawlingFile);
 			} else {
-				/*var pathWithSingleQuotes = "'" + crawlingFile.path + "'";
-				var pathWithDoubleQuotes = '"' + crawlingFile.path + '"';
-
-				// make sure the END of the path is found, surrounded by quotes, and thus, NOT a part
-				// of a larger file. we also ensure this by only replacing blobs, but that does not
-				// mean the HTML file doesn't coincidentally have paths that contain blob download URLs!
-				var singleQuotesFound = crawlingHTML.indexOf(pathWithSingleQuotes) >= 0;
-				var doubleQuotesFound = crawlingHTML.indexOf(pathWithDoubleQuotes) >= 0;*/
-				var regularPathFound = crawlingHTML.indexOf(crawlingFile.path) >= 0;
-				var filePathIsInHTML = regularPathFound; //pathWithSingleQuotes || pathWithDoubleQuotes;
-
-				if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
-					networker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
-						if (crawlingFoundFile != null) {
-							var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
-							var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, downloadURL);
-							console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + crawlingFoundFile.download_url);
-							iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, newlyKnownFiles, iterateCallback);
-						}
-					});
-				} else {
+				var crawlingFile = treeFiles[i];
+				if (crawlingFile == null) {
+					console.log("Found null file while crawling = " + crawlingFile);
 					iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
+				} else {
+					var pathWithSingleQuotes = "'" + crawlingFile.path + "'";
+					var pathWithDoubleQuotes = '"' + crawlingFile.path + '"';
+
+						// here we have to be stricter; the paths should sometimes force replaced if they match
+						// with confidence, such as a "../" situation
+						//---
+					// make sure the END of the path is found, surrounded by quotes, and thus, NOT a part
+					// of a larger file. we also ensure this by only replacing blobs, but that does not
+					// mean the HTML file doesn't coincidentally have paths that contain blob download URLs!
+					var singleQuotesFound = crawlingHTML.indexOf(pathWithSingleQuotes) >= 0;
+					var doubleQuotesFound = crawlingHTML.indexOf(pathWithDoubleQuotes) >= 0;
+					var regularPathFound = crawlingHTML.indexOf(crawlingFile.path) >= 0;
+					var filePathIsInHTML = singleQuotesFound == true || doubleQuotesFound == true;
+
+					if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
+						networker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
+							if (crawlingFoundFile != null) {
+								var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
+
+								var crawlingHTMLReplacement = crawlingHTML;
+								while (crawlingHTMLReplacement.indexOf(pathWithSingleQuotes) >= 0 || crawlingHTMLReplacement.indexOf(pathWithDoubleQuotes) >= 0) {
+									crawlingHTMLReplacement = crawlingHTMLReplacement.replace(pathWithSingleQuotes, "'"+downloadURL+"'");
+									crawlingHTMLReplacement = crawlingHTMLReplacement.replace(pathWithDoubleQuotes, '"'+downloadURL+'"');
+								}
+
+								var newlyCrawlingHTML = crawlingHTMLReplacement;
+								console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + downloadURL);
+								iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, newlyKnownFiles, iterateCallback);
+							}
+						});
+					} else {
+						iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, crawlingKnownFiles, iterateCallback);
+					}
 				}
 			}
 		} // end iterateGithubTreeFile()

@@ -33,7 +33,7 @@ function setSuccessURL(url) {
 	$("#current-alert").html("<a class='text-primary' href='" + url + "'>" + url + "</a>");
 }
 
-var updateHistoryUI = function(displayURL, html) {
+var updateHistoryUI = function(displayURL, html, updateHistoryUICallback) {
 	$("#go-link").attr("href", displayURL);
 
 	$("#site").html("");
@@ -46,6 +46,7 @@ var updateHistoryUI = function(displayURL, html) {
 		console.log("😭 Gave up deployment after " + tries + " tries...");
 		setSuccessURL(displayURL);
         $.getScript('https://code.jquery.com/jquery-3.1.1.js');
+        updateHistoryUICallback();
 	}
 
 	var deploySite = function(siteHTML, attempts) {
@@ -54,14 +55,8 @@ var updateHistoryUI = function(displayURL, html) {
 			finishDeployment(attempts);
 		} else {
 			try {
-				var iframeElement = document.getElementById("site-iframe").srcdoc = siteHTML;
-				/*var iframeDocument = (iframeElement.contentWindow || iframeElement.contentDocument);
-				if (iframeDocument.document) {
-					iframeDocument = iframeDocument.document;
-				}
-
-				iframeDocument.body.replaceWith(siteHTML);*/
-				//$("#site-iframe").contents().find('html').html(siteHTML);
+				var iframeElement = document.getElementById("site-iframe");
+				iframeElement.srcdoc = siteHTML;
 				finishDeployment(attempts);
 			} catch (error) {
 				console.log("⚠ Deploy site error = " + error);
@@ -114,9 +109,22 @@ function setHistory(delta) {
 
 	var historyFiles = iggieHistory[selectedHistory];
 	var historyRef = iggieRefHistory[selectedHistory];
+
 	var littleHistorian = new iggie(username, repository, auth);
 	littleHistorian.getHistoryFilesHTML(filename, historyRef, historyFiles, function(url, html) {
-		updateHistoryUI(url, html);
+		updateHistoryUI(url, html, function() {
+	        // after a short delay, crawl URLs to see if anything else is there to substitute
+	        setTimeout(function() {
+	        	//var iframeElement = document.getElementById("site-iframe");
+	        	//iframeElement.contentWindow.document.body.innerHTML;
+	        	var currentHTML = $("#site-iframe").contents().find("html")[0].innerHTML; 
+	        	littleHistorian.getCrawledHTMLFileWithResolvedURLs(historyRef, currentHTML, historyFiles, function (doubleCrawlHTML) {
+					updateHistoryUI(url, doubleCrawlHTML, function() {
+						console.log("🙌 Done double render!");
+					});
+	        	});
+	        }, 100);
+		});
 	});
 }
 

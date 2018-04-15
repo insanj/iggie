@@ -471,4 +471,11 @@ class iggie {
 			});
 		});
 	}
+
+	getCrawledHTMLFileWithResolvedURLs(ref, html, historyFiles, callback) {
+		var networker = new iggieNetworker(this.username, this.repository, this.auth);
+		networker.crawlHTMLAndResolveURLs(networker, ref, html, historyFiles, function (crawledResults) {
+			callback(crawledResults);
+		});
+	}
 }

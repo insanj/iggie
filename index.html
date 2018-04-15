@@ -14,6 +14,7 @@
 
     <!-- Custom styles for this template -->
     <link href="resources/cover.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
   </head>
   <body class="text-center" style="z-index: 10;">
     <div class="cover-container d-flex h-100 p-3 mx-auto flex-column" style="z-index: 6;">
@@ -35,16 +36,13 @@
         🎉 today's your lucky day! iggie lets you plug in any github repo and use your keyboard to navigate across its entire history. 
         </p>
         <p class="lead mt-5">
-          <div class="input-group m-3" id="github">
+          <div class="input-group m-3 mx-auto" id="github">
             <div class="input-group-prepend">
-              <span class="input-group-text" style="text-shadow: none;" id="inputGroup-sizing-lg">https://github.com/</span>
+              <span class="input-group-text" style="text-shadow: none;" id="inputGroup-sizing-lg"><img src="resources/github.svg" width=20 height=20 class="mr-2">Github</span>
             </div>
-              <input type="text" id="username" class="form-control needs-validation" value="insanj" placeholder="username">
+              <input type="text" id="username" class="form-control needs-validation" value="insanj" placeholder="username" />
               <span class="input-group-text rounded-0" style="text-shadow: none;">/</span>
-              <input type="text" id="repository" class="form-control needs-validation" value="insanj.com" placeholder="repository">
-              <div class="invalid-feedback">
-                Github username and repository required!
-              </div>
+              <input type="text" id="repository" class="form-control needs-validation" value="insanj.com" placeholder="repository" />
           </div>
 
           <a href="#" id="run" class="btn btn-lg btn-secondary">⚡ Run</a>
@@ -146,6 +144,19 @@ $("#run").on("click", function() {
     var composedURL = "run/index.html?username=" + username + "&repository=" + repository + "&filename=" + filename;
     window.location.href = composedURL;
   }
+});
+
+$(function () {
+  $('main').popover({
+    container: 'main',
+    content: function() {
+      return 'Put in a username & repository to let 🤖 iggie pull the site in for you! 🌹';
+    },
+    placement : function() {
+      return "bottom";
+    },
+    trigger: 'hover'
+  });
 });
 
     </script>

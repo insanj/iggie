@@ -25,6 +25,7 @@ a:hover {
  */
 
 html, body {
+  min-width: 400px;
   height: 100%;
   background-color: #F25336;
 }
@@ -93,14 +94,9 @@ html {
   font-weight: 700;
 }
 
-#github input {
-  width: 100px;
-}
-
 #github {
   width: inherit;
 }
-
 
 /*
  * Footer

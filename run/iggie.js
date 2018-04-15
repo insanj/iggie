@@ -45,14 +45,6 @@ class iggieURLBuilder {
 	}
 }
 
-class iggieFile {
-	constructor(name, url, data) {
-		this.name = name
-		this.url = url
-		this.data = data
-	}
-}
-
 class iggieNetworker {
 	constructor(username, repository) {
 		this.username = username
@@ -245,8 +237,20 @@ class iggieNetworker {
 				if (file.type == "blob") {
 					console.log("replacing " + file.path + " with " + file.url + " which is at index = " + crawledHTML.indexOf(file.path));
 					
+					//
 					//networker.getContentForBlobURL(file.url, function(content) {
-					crawledHTML = crawledHTML.replace(file.path, content);
+					crawledHTML = crawledHTML.replace(file.path, file.url);
+					//
+					// Caveat: the file.url here will be a blob url, not the download_url
+					// How do we get the download_url? Simple! NOT from a github tree request,
+					// but from a normal dir request. Accept as a param a dict of paths
+					// to files that we already have. If there's something in there for this
+					// path, then boom, we're good. If not, make an additional call to 
+					// get the contents of the directory that hosts the blob, even if
+					// its not a dir itself, then snatch the file from there, adding it
+					// and the rest of the files to the param dict for the rest of the
+					// loop. Then, all paths should be replaced with resolved download_urls!
+					//
 				}
 			}
 

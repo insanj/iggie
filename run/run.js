@@ -29,6 +29,7 @@ var repository = param("repository");
 var filename = param("filename");
 
 var iggieHistory = [];
+var iggieRefHistory = [];
 var selectedHistory = 0;
 
 var historian = new iggie(username, repository);
@@ -59,25 +60,44 @@ function setHistory(delta) {
 	setLoadingString("🎩 Danced with Github! Resolving website files...");
 
 	var historyFiles = iggieHistory[selectedHistory];
-	historian.getHistoryFilesHTML(filename, historyFiles, function(url, html) {
+	var historyRef = iggieRefHistory[selectedHistory];
+	historian.getHistoryFilesHTML(filename, historyRef, historyFiles, function(url, html) {
 		updateHistoryUI(url, html);
-	})
+	});
 }
 
 //
 
 setLoadingString("⬇ Connecting to Github...");
 
-historian.getHistoryOfAllFiles(function(commitFiles) {
-	iggieHistory = commitFiles;
-	$("#go").removeClass("disabled");
+var historyError;
+historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
+	if (error != null) {
+		historyError = error;
+		$("#current-alert").removeClass("alert-primary");
+		$("#current-alert").addClass("alert-danger");
 
-	setHistory(0);
-	console.log("🎉 Loaded and set history!");
+		$("#current-alert").html("<a id='error-alert' class='text-primary' href='#'>" + error + "</a>");
+	} else {
+		$("#current-alert").removeClass("alert-danger");
+		$("#current-alert").addClass("alert-primary");
+
+		iggieRefHistory = commitRefs;
+		iggieHistory = commitFiles;
+		$("#go").removeClass("disabled");
+
+		setHistory(0);
+		console.log("🎉 Loaded and set history!");
+	}
 });
 
 
 //
+
+$("body").on("click", "#error-alert",  function(e) {
+		e.preventDefault();
+		alert(historyError);
+})
 
 $("#back").on("click", function(e) {
 	e.preventDefault();

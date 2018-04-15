@@ -35,6 +35,14 @@ class iggieURLBuilder {
 		var refQuery = "?ref=" + ref;
 		return precomposedURL + refQuery;
 	}
+
+	buildTreeForCommitURL(ref) {
+		var urlHost = "https://api.github.com/";
+		var apiRepoPath = "repos/";
+		var apiTreesPath = "/git/trees/";
+		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiTreesPath;
+		return precomposedURL + ref + "?recursive=1";
+	}
 }
 
 class iggieFile {
@@ -66,8 +74,11 @@ class iggieNetworker {
 		  		commitHashes.push(sha);
 			}
 
-			callback(commitHashes);
-		  }
+			callback(commitHashes, null);
+		  },
+		  error: function ( xhr, status, error) {
+			callback(null, error);
+	      }
 		});
 	}
 
@@ -157,18 +168,18 @@ class iggieNetworker {
 	}
 
 	getGithubContentsOfAllFilesInCommits(networker, commits, callback) {
-		var history = [];
+		var githubHistory = {};
 
-		var iterateGetContents = function(i, getContents) {
+		var iterateGetContents = function(i) {
 			// no-op
 		};
-		iterateGetContents = function(i, getContents) {
+		iterateGetContents = function(i) {
 			if (i >= commits.length) {
-				callback(history);
+				callback(githubHistory);
 			} else {
 				var ref = commits[i];
 				networker.getGithubContentsOfAllFilesInCommit(ref, function(files) {
-					history.push(files);
+					githubHistory[ref] = files;
 					iterateGetContents(i+1);
 	    		});
     		}
@@ -176,6 +187,67 @@ class iggieNetworker {
 
 		// begin!
 		iterateGetContents(0);
+	}
+
+	getGithubTreeForCommit(ref, callback) {
+		var builder = new iggieURLBuilder(username, repository);
+		var url = builder.buildTreeForCommitURL(ref);
+
+		$.ajax({
+		  type: 'GET',
+		  url: url,
+		  dataType: 'json',
+		  success: function (result) {
+			var decodedFileContents = [];
+			for (var i = 0; i < result.tree.length; i++) {
+				var file = result.tree[i];
+			  	decodedFileContents.push(file);
+			}
+
+		  	callback(decodedFileContents);
+		  }
+		});
+	}
+
+	getContentsForURL(url, callback) {
+		$.ajax({
+			type: 'GET',
+			url: url,
+			success: function (htmlResult) {
+				callback(htmlResult);
+			}
+		});
+	}
+
+	crawlHTMLAndResolveURLs(networker, commit, commitHTML, callback) {
+		//var gitPaths = [];
+		//var gitPathDict = {};
+
+		var crawledHTML = commitHTML;
+		networker.getGithubTreeForCommit(commit, function(result) {
+			for (var i = 0; i < result.length; i++) {
+				var file = result[i];
+				//gitPaths.push(file.path);
+				//gitPathDict[file.path] = file;
+
+				if (file.type == "blob") {
+					console.log("replacing " + file.path + " with " + file.url + " which is at index = " + crawledHTML.indexOf(file.path));
+					crawledHTML = crawledHTML.replace(file.path, file.url);
+				}
+			}
+
+			/*var crawledContents = commitHTML;
+			for (var l = 0; l < linkMatches.length; l++) {
+				var link = linkMatches[l];
+				if (gitPaths.indexOf(link) > 0) {
+					console.log("found link " + link);
+					var substitutionLink = gitPathDict[link].download_url;
+					crawledContents = crawledContents.replace(link, substitutionLink);
+				}
+			}*/
+
+			callback(crawledHTML);
+		});
 	}
 }
 
@@ -187,7 +259,7 @@ class iggie {
 
 	getHistory(filename, callback) {
 		var networker = new iggieNetworker(this.username, this.repository);
-		networker.getGithubCommits(function(commits) {
+		networker.getGithubCommits(function(commits, error) {
     		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents, commitsURLs) {
     			callback(commitsContents, commitsURLs);
     		});
@@ -196,14 +268,25 @@ class iggie {
 
 	getHistoryOfAllFiles(callback) {
 		var networker = new iggieNetworker(this.username, this.repository);
-		networker.getGithubCommits(function(commits) {
-    		networker.getGithubContentsOfAllFilesInCommits(networker, commits, function(files) {
-    			callback(files);
-    		});
+		networker.getGithubCommits(function(commits, error) {
+			if (error != null) {
+				callback(null, error);
+			} else {
+	    		networker.getGithubContentsOfAllFilesInCommits(networker, commits, function(fileDict) {
+					var refs = [];
+					var files = [];
+					for (var ref in fileDict) {
+				    	refs.push(ref);
+				    	files.push(fileDict[ref]);
+					}
+
+	    			callback(refs, files, null);
+	    		});
+	    	}
     	});
 	}
 
-	getHistoryFilesHTML(filename, historyFiles, callback) {
+	getHistoryFilesHTML(filename, ref, historyFiles, callback) {
 		/*
 		 Step one: grab and download index.html file
 		 Step two: create a source url array by looping through all paths/urs found in the index.html 
@@ -216,36 +299,21 @@ class iggie {
 		*/
 
 		var historyHTMLFile;
-		var historyCSSFile;
 		for (var i = 0; i < historyFiles.length; i++) {
 			var file = historyFiles[i];
 			if (file.name == filename) {
 				historyHTMLFile = file;
-			} else if (file.name.substring(file.name.length-3) == "css") {
-				historyCSSFile = file;
 			}
 		}
 
-		$.ajax({
-			type: 'GET',
-			url: historyHTMLFile.download_url,
-			success: function (htmlResult) {
-				if (historyCSSFile != null) {
-					setLoadingString("🎉 Finished up homepage search, downloading additional resources...");
-					$.ajax({
-						type: 'GET',
-						url: historyCSSFile.download_url,
-						success: function (cssResult) {
-							var combinedResult = htmlResult.replace("<head>", "<head><style>" + cssResult + "</style>");
-							setLoadingString("🤖 We did it, iggie! Sending website your way...");
-							callback(historyHTMLFile.html_url, combinedResult);
-						}
-					});
-				} else {
-					setLoadingString("🤖 We did it, iggie! Sending website your way...");
-					callback(historyHTMLFile.html_url, htmlResult);
-				}
-			}
+		var networker = new iggieNetworker(this.username, this.repository);
+		networker.getContentsForURL(historyHTMLFile.download_url, function(results) {
+			setLoadingString("🎉 Finished up homepage search, downloading additional resources...");	
+
+			networker.crawlHTMLAndResolveURLs(networker, ref, results, function (crawledResults) {
+				setLoadingString("🤖 We did it, iggie! Sending website your way...");
+				callback(historyHTMLFile.html_url, crawledResults);
+			});
 		});
 	}
 }

@@ -4,10 +4,33 @@
 	https://github.com/insanj/iggie
 */
 
+class iggieGithubAuth {
+	clientId() {
+		return "ddd03fe93afa0b9612aa";
+	}
+
+	clientSecret() {
+		return "fe7bba0464c06e72d02a417af28b1f9dbc744b6e";
+	}
+
+	clientURLQueryString() {
+		return "client_id="+ this.clientId() +"&client_secret=" + this.clientSecret();
+	}
+
+	appendClientURLQueryString(str) {
+		if (str.indexOf("?") > 0) {
+			return str + "&" + this.clientURLQueryString();
+		} else {
+			return str + "?" + this.clientURLQueryString();
+		}
+	}
+}
+
 class iggieURLBuilder {
 	constructor(username, repository) {
 		this.username = username
 		this.repository = repository
+		this.auth = new iggieGithubAuth();
 	}
 
 	buildCommitsURL() {
@@ -15,7 +38,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiCommitsPath = "/commits";
 		var composedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiCommitsPath;
-		return composedURL;
+		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
 	buildContentsOfCommitURL(filename, ref) {
@@ -24,16 +47,27 @@ class iggieURLBuilder {
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
 		var refQuery = "?ref=" + ref;
-		return precomposedURL + filename + refQuery;
+		var composedURL = precomposedURL + filename + refQuery;
+		return this.auth.appendClientURLQueryString(composedURL);
 	}
 	
+	buildGetFileInCommitURL(path, ref) {
+		var urlHost = "https://api.github.com/";
+		var apiRepoPath = "repos/";
+		var apiContentsPath = "/contents/";
+		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
+		var composedURL = precomposedURL + path;
+		return this.auth.appendClientURLQueryString(composedURL);
+	}
+
 	buildContentsOfAllFilesInCommitURL(ref) {
 		var urlHost = "https://api.github.com/";
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
 		var refQuery = "?ref=" + ref;
-		return precomposedURL + refQuery;
+		var composedURL = precomposedURL + refQuery;
+		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
 	buildTreeForCommitURL(ref) {
@@ -41,7 +75,8 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiTreesPath = "/git/trees/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiTreesPath;
-		return precomposedURL + ref + "?recursive=1";
+		var composedURL = precomposedURL + ref + "?recursive=1";
+		return this.auth.appendClientURLQueryString(composedURL);
 	}
 }
 
@@ -111,6 +146,38 @@ class iggieNetworker {
 		  	}
 
 		  	callback(decodedContent, fileURL);
+		  }
+		});
+	}
+
+	getGithubFileInCommit(path, ref, callback) {
+		var builder = new iggieURLBuilder(username, repository);
+		var url = builder.buildGetFileInCommitURL(path, ref);
+		$.ajax({
+		  type: 'GET',
+		  url: url,
+		  dataType: 'json',
+		  success: function (result) {
+		  	var file;
+		  	if ($.isArray(result)) {
+		  		var commitFiles = result;
+			  	for (var i = 0; i < commitFiles.length; i++) {
+			  		var commitFile = commitFiles[i];
+			  		if (commitFile.path == path) {
+			  			file = commitFile;
+			  			break;
+			  		}
+			  	}
+
+			  	if (file == null) {
+			  		console.log("⚠ Unable to find path = " + path);
+			  		return;
+			  	}
+		  	} else {
+		  		file = result;
+		  	}
+
+		  	callback(file);
 		  }
 		});
 	}
@@ -223,48 +290,61 @@ class iggieNetworker {
 		});
 	}
 
-	crawlHTMLAndResolveURLs(networker, commit, commitHTML, callback) {
-		//var gitPaths = [];
-		//var gitPathDict = {};
+	findFullFileForPath(filePath, commit, knownFilesDict, callback) {
+		//
+		// Caveat: the file.url here will be a blob url, not the download_url
+		// How do we get the download_url? Simple! NOT from a github tree request,
+		// but from a normal dir request. Accept as a param a dict of paths
+		// to files that we already have. If there's something in there for this
+		// path, then boom, we're good. If not, make an additional call to 
+		// get the contents of the directory that hosts the blob, even if
+		// its not a dir itself, then snatch the file from there, adding it
+		// and the rest of the files to the param dict for the rest of the
+		// loop. Then, all paths should be replaced with resolved download_urls!
+		//
+		var knownFile = knownFilesDict[filePath];
+		if (knownFile != null) {
+			callback(knownFile);
+		} else {
+			this.getGithubFileInCommit(filePath, commit, function(foundFile) {
+				if (foundFile != null) {
+					knownFilesDict[foundFile.path] = foundFile;
+				}
+
+				callback(foundFile);
+			});
+		}
+	}
+
+	crawlHTMLAndResolveURLs(networker, commit, commitHTML, knownFiles, callback) {
+		var knownFilesDict = {};
+		for (var i = 0; i < knownFiles.length; i++) {
+			var file = knownFiles[i];
+			knownFilesDict[file.path] = file;
+		}
 
 		var crawledHTML = commitHTML;
 		networker.getGithubTreeForCommit(commit, function(result) {
+			var totalIterations = result.length-1;
 			for (var i = 0; i < result.length; i++) {
 				var file = result[i];
-				//gitPaths.push(file.path);
-				//gitPathDict[file.path] = file;
 
-				if (file.type == "blob") {
-					console.log("replacing " + file.path + " with " + file.url + " which is at index = " + crawledHTML.indexOf(file.path));
-					
-					//
-					//networker.getContentForBlobURL(file.url, function(content) {
-					crawledHTML = crawledHTML.replace(file.path, file.url);
-					//
-					// Caveat: the file.url here will be a blob url, not the download_url
-					// How do we get the download_url? Simple! NOT from a github tree request,
-					// but from a normal dir request. Accept as a param a dict of paths
-					// to files that we already have. If there's something in there for this
-					// path, then boom, we're good. If not, make an additional call to 
-					// get the contents of the directory that hosts the blob, even if
-					// its not a dir itself, then snatch the file from there, adding it
-					// and the rest of the files to the param dict for the rest of the
-					// loop. Then, all paths should be replaced with resolved download_urls!
-					//
+				if (file.type == "blob") {					
+					networker.findFullFileForPath(file.path, commit, knownFilesDict, function(foundFile) {
+						if (foundFile != null) {
+							crawledHTML = crawledHTML.replace(file.path, foundFile.download_url);
+						}
+						
+						if (--totalIterations <= 0) {
+							callback(crawledHTML);
+						}
+					});
+				} else {
+					if (--totalIterations <= 0) {
+						callback(crawledHTML);
+					}
 				}
 			}
-
-			/*var crawledContents = commitHTML;
-			for (var l = 0; l < linkMatches.length; l++) {
-				var link = linkMatches[l];
-				if (gitPaths.indexOf(link) > 0) {
-					console.log("found link " + link);
-					var substitutionLink = gitPathDict[link].download_url;
-					crawledContents = crawledContents.replace(link, substitutionLink);
-				}
-			}*/
-
-			callback(crawledHTML);
 		});
 	}
 }
@@ -328,7 +408,7 @@ class iggie {
 		networker.getContentsForURL(historyHTMLFile.download_url, function(results) {
 			setLoadingString("🎉 Finished up homepage search, downloading additional resources...");	
 
-			networker.crawlHTMLAndResolveURLs(networker, ref, results, function (crawledResults) {
+			networker.crawlHTMLAndResolveURLs(networker, ref, results, historyFiles, function (crawledResults) {
 				setLoadingString("🤖 We did it, iggie! Sending website your way...");
 				callback(historyHTMLFile.html_url, crawledResults);
 			});

@@ -290,7 +290,7 @@ class iggieNetworker {
 		});
 	}
 
-	findFullFileForPath(filePath, commit, knownFilesDict, callback) {
+	findFullFileForPath(filePath, commit, alreadyFullFiles, callback) {
 		//
 		// Caveat: the file.url here will be a blob url, not the download_url
 		// How do we get the download_url? Simple! NOT from a github tree request,
@@ -302,16 +302,17 @@ class iggieNetworker {
 		// and the rest of the files to the param dict for the rest of the
 		// loop. Then, all paths should be replaced with resolved download_urls!
 		//
-		var knownFile = knownFilesDict[filePath];
-		if (knownFile != null) {
-			callback(knownFile);
+		var fullFile = alreadyFullFiles[filePath];
+		if (fullFile != null) {
+			callback(fullFile);
 		} else {
-			this.getGithubFileInCommit(filePath, commit, function(foundFile) {
-				if (foundFile != null) {
-					knownFilesDict[foundFile.path] = foundFile;
+			this.getGithubFileInCommit(filePath, commit, function(foundFullFile) {
+				var newFullFiles = alreadyFullFiles;
+				if (foundFullFile != null) {
+					newFullFiles[foundFullFile.path] = foundFullFile;
 				}
 
-				callback(foundFile);
+				callback(foundFullFile, newFullFiles);
 			});
 		}
 	}
@@ -319,32 +320,39 @@ class iggieNetworker {
 	crawlHTMLAndResolveURLs(networker, commit, commitHTML, knownFiles, callback) {
 		var knownFilesDict = {};
 		for (var i = 0; i < knownFiles.length; i++) {
-			var file = knownFiles[i];
-			knownFilesDict[file.path] = file;
+			var knownFile = knownFiles[i];
+			knownFilesDict[knownFile.path] = knownFile;
 		}
 
-		var crawledHTML = commitHTML;
-		networker.getGithubTreeForCommit(commit, function(result) {
-			var totalIterations = result.length-1;
-			for (var i = 0; i < result.length; i++) {
-				var file = result[i];
-
-				if (file.type == "blob") {					
-					networker.findFullFileForPath(file.path, commit, knownFilesDict, function(foundFile) {
-						if (foundFile != null) {
-							crawledHTML = crawledHTML.replace(file.path, foundFile.download_url);
-						}
-						
-						if (--totalIterations <= 0) {
-							callback(crawledHTML);
-						}
-					});
-				} else {
-					if (--totalIterations <= 0) {
-						callback(crawledHTML);
-					}
-				}
+		var iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
+		}
+		iterateGithubTreeFile = function(treeFiles, i, crawlingHTML, iterateCallback) {
+			if (i < 0 || i >= treeFiles.length) {
+				iterateCallback(crawlingHTML);
 			}
+
+			var crawlingFile = treeFiles[i];
+			var filePathIsInHTML = crawlingHTML.indexOf(crawlingFile.path) >= 0;
+
+			if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
+				networker.findFullFileForPath(crawlingFile.path, commit, knownFilesDict, function(crawlingFoundFile, newlyKnownFiles) {
+					knownFilesDict = newlyKnownFiles;
+					if (crawlingFoundFile != null) {
+						var newlyCrawlingHTML = crawlingHTML.replace(crawlingFoundFile.path, crawlingFoundFile.download_url);
+						console.log("💥 Found " + crawlingFoundFile.path + " and replaced with " + crawlingFoundFile.download_url);
+						iterateGithubTreeFile(treeFiles, ++i, newlyCrawlingHTML, iterateCallback);
+					}
+				});
+			} else {
+				iterateGithubTreeFile(treeFiles, ++i, crawlingHTML, iterateCallback);
+			}
+		}
+
+		networker.getGithubTreeForCommit(commit, function(treeResult) {
+			var totalIterations = treeResult.length-1;
+			iterateGithubTreeFile(treeResult, 0, commitHTML, function(crawledHTML) {
+				callback(crawledHTML);
+			});	
 		});
 	}
 }

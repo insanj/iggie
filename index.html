@@ -39,9 +39,12 @@
             <div class="input-group-prepend">
               <span class="input-group-text" style="text-shadow: none;" id="inputGroup-sizing-lg">https://github.com/</span>
             </div>
-              <input type="text" id="username" class="form-control" value="insanj" placeholder="username">
+              <input type="text" id="username" class="form-control needs-validation" value="insanj" placeholder="username">
               <span class="input-group-text rounded-0" style="text-shadow: none;">/</span>
-              <input type="text" id="repository" class="form-control" value="insanj.com" placeholder="repository">
+              <input type="text" id="repository" class="form-control needs-validation" value="insanj.com" placeholder="repository">
+              <div class="invalid-feedback">
+                Github username and repository required!
+              </div>
           </div>
 
           <a href="#" id="run" class="btn btn-lg btn-secondary">⚡ Run</a>
@@ -68,7 +71,7 @@
     <script>
 $(function () {
   $('[data-toggle="tooltip"]').tooltip()
-})
+});
     </script>
 
     <!-- wave -->
@@ -120,12 +123,29 @@ function simulateTouch(cooldown) {
 
 simulateTouch(1000);
 
+function showAlert(message) {
+  $("#alert-main").remove();
+
+  var alertDiv = '<div id="alert-main" class="alert alert-warning">';
+  alertDiv = alertDiv + message;
+  alertDiv = alertDiv + '</div>';
+
+  $("main").append(alertDiv);
+}
+
 $("#run").on("click", function() {
   var username = $("#username").val();
   var repository = $("#repository").val();
-  var filename = "index.html"; // todo: figure out how to make this, and the rest of the form, work
-  var composedURL = "run/index.html?username=" + username + "&repository=" + repository + "&filename=" + filename;
-  window.location.href = composedURL;
+
+  if (username == null || username.length <= 0) {
+    showAlert("⚠ Sorry, you forgot to put in a Github username!");
+  } else if (repository == null || repository.length <= 0) {
+    showAlert("⚠ Sorry, you forgot to put in a Github repository!");
+  } else {
+    var filename = "index.html";
+    var composedURL = "run/index.html?username=" + username + "&repository=" + repository + "&filename=" + filename;
+    window.location.href = composedURL;
+  }
 });
 
     </script>

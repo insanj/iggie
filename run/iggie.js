@@ -202,4 +202,50 @@ class iggie {
     		});
     	});
 	}
+
+	getHistoryFilesHTML(filename, historyFiles, callback) {
+		/*
+		 Step one: grab and download index.html file
+		 Step two: create a source url array by looping through all paths/urs found in the index.html 
+		 Step three: loop through all files in the file array and check for the following:
+		 	If 1: if the file path is found in source url array, 
+			Then 2:	replace the urls in the index.html for the file's download_url
+			If 2: if the file is a directory, and it is a part of a url in the source array,
+			Then 2: pull the contents of the directory from Github, recursively searching to resolve the full path
+			Finally 2: replace the urls in the index.html with the resolved download_url
+		*/
+
+		var historyHTMLFile;
+		var historyCSSFile;
+		for (var i = 0; i < historyFiles.length; i++) {
+			var file = historyFiles[i];
+			if (file.name == filename) {
+				historyHTMLFile = file;
+			} else if (file.name.substring(file.name.length-3) == "css") {
+				historyCSSFile = file;
+			}
+		}
+
+		$.ajax({
+			type: 'GET',
+			url: historyHTMLFile.download_url,
+			success: function (htmlResult) {
+				if (historyCSSFile != null) {
+					setLoadingString("🎉 Finished up homepage search, downloading additional resources...");
+					$.ajax({
+						type: 'GET',
+						url: historyCSSFile.download_url,
+						success: function (cssResult) {
+							var combinedResult = htmlResult.replace("<head>", "<head><style>" + cssResult + "</style>");
+							setLoadingString("🤖 We did it, iggie! Sending website your way...");
+							callback(historyHTMLFile.html_url, combinedResult);
+						}
+					});
+				} else {
+					setLoadingString("🤖 We did it, iggie! Sending website your way...");
+					callback(historyHTMLFile.html_url, htmlResult);
+				}
+			}
+		});
+	}
 }

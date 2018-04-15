@@ -95,7 +95,7 @@ html {
 }
 
 #github {
-  width: inherit;
+  max-width: 500px;
 }
 
 /*

@@ -44,7 +44,11 @@ var updateHistoryUI = function(displayURL, html, updateHistoryUICallback) {
 	var finishDeployment = function(attempts) {
 		var tries = headAgainstWallThreshold - attempts;
 		console.log("😭 Gave up deployment after " + tries + " tries...");
-		setSuccessURL(displayURL);
+
+		if (displayURL != null) {
+			setSuccessURL(displayURL);
+		}
+
         $.getScript('https://code.jquery.com/jquery-3.1.1.js');
         updateHistoryUICallback();
 	}
@@ -85,6 +89,19 @@ var iggieHistory = [];
 var iggieRefHistory = [];
 var selectedHistory = 0;
 
+function recrawlCurrentHistory() {
+	var ref = iggieRefHistory[selectedHistory];
+	var currentHTML = $("#site-iframe").contents().find("html")[0].innerHTML; 
+	var files = iggieHistory[selectedHistory];
+
+	var recrawlHistorian = new iggie(username, repository, auth);
+	recrawlHistorian.getCrawledHTMLFileWithResolvedURLs(ref, currentHTML, files, function (recrawledHTML) {
+		updateHistoryUI(null, recrawledHTML, function() {
+			console.log("🙌 Done recrawl & render!");
+		});
+	});
+}
+
 function setHistory(delta) {	
 	var historyIndex = selectedHistory + delta;
 	if (historyIndex < 0 || historyIndex >= iggieHistory.length) {
@@ -113,17 +130,7 @@ function setHistory(delta) {
 	var littleHistorian = new iggie(username, repository, auth);
 	littleHistorian.getHistoryFilesHTML(filename, historyRef, historyFiles, function(url, html) {
 		updateHistoryUI(url, html, function() {
-	        // after a short delay, crawl URLs to see if anything else is there to substitute
-	        setTimeout(function() {
-	        	//var iframeElement = document.getElementById("site-iframe");
-	        	//iframeElement.contentWindow.document.body.innerHTML;
-	        	var currentHTML = $("#site-iframe").contents().find("html")[0].innerHTML; 
-	        	littleHistorian.getCrawledHTMLFileWithResolvedURLs(historyRef, currentHTML, historyFiles, function (doubleCrawlHTML) {
-					updateHistoryUI(url, doubleCrawlHTML, function() {
-						console.log("🙌 Done double render!");
-					});
-	        	});
-	        }, 100);
+			console.log("🎨 Rendered history!");
 		});
 	});
 }
@@ -160,7 +167,6 @@ historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 	}
 });
 
-
 //
 
 $("body").on("click", "#error-alert",  function(e) {
@@ -173,6 +179,11 @@ $("#back").on("click", function(e) {
 	if ($("#back").hasClass('disabled') == false) {
 		safeSetHistory(1);
 	}
+});
+
+$("#refresh").on("click", function(e) {
+	e.preventDefault();
+	recrawlCurrentHistory();
 });
 
 $("#forward").on("click", function(e) {

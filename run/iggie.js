@@ -30,11 +30,14 @@ class iggieURLBuilder {
 		this.auth = auth;
 	}
 
-	buildCommitsURL() {
+	buildCommitsURL(untilDate) {
 		var urlHost = "https://api.github.com/";
 		var apiRepoPath = "repos/";
 		var apiCommitsPath = "/commits";
 		var composedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiCommitsPath;
+		if (untilDate != null) {
+			composedURL = composedURL + "?until=" + untilDate;
+		}
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
@@ -86,25 +89,46 @@ class iggieNetworker {
 
 	getGithubCommits(callback) {
 		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
-		var url = builder.buildCommitsURL();
-		$.ajax({
-		  type: 'GET',
-		  url: url,
-		  dataType: 'json',
-		  success: function (result) {
-		  	var commitHashes = [];
-			for (var i = 0; i < result.length; i++) {
-		  		var commit = result[i];
-		  		var sha = commit.sha;
-		  		commitHashes.push(sha);
-			}
+		var	getPaginatedGithubCommitsURL = function(paginatedDate) {
+			return builder.buildCommitsURL(paginatedDate);
+		}
 
-			callback(commitHashes, null);
-		  },
-		  error: function ( xhr, status, error) {
-			callback(null, error);
-	      }
-		});
+		var getGithubCommitsPaginated = function(paginatedCallback, pulledCommitHashes, untilDate) {
+		}
+		getGithubCommitsPaginated =  function(paginatedCallback, pulledCommitHashes, untilDate) {
+			var url = getPaginatedGithubCommitsURL(untilDate);
+			$.ajax({
+			  type: 'GET',
+			  url: url,
+			  dataType: 'json',
+			  success: function (result) {
+			  	if (result == null || result.length <= 0) { // || pulledCommitHashes.includes(result[0].sha)) {
+				  	console.log("🗞 Done paginating all available Github commits!");
+					paginatedCallback(pulledCommitHashes, null);
+			  	} else {
+				  	var commitHashes = pulledCommitHashes;
+					for (var i = 0; i < result.length; i++) { // don't include the last element to prevent filtering out from if
+				  		var commit = result[i];
+				  		var sha = commit.sha;
+				  		commitHashes.push(sha);
+					}
+
+				  	var finalDate = result[result.length-1].commit.author.date;
+				  	console.log("📃 Paginated from " + untilDate + " to " + finalDate + "!");
+				  	if (finalDate == untilDate) {
+						paginatedCallback(pulledCommitHashes, null);
+				  	} else {
+				  		getGithubCommitsPaginated(paginatedCallback, commitHashes, finalDate);
+				  	}
+			  	}
+			  },
+			  error: function ( xhr, status, error) {
+				paginatedCallback(null, error);
+		      }
+			});
+		}
+
+		getGithubCommitsPaginated(callback, [], null);
 	}
 
 	getGithubContentsOfFileInCommit(filename, ref, callback) {

@@ -45,7 +45,7 @@
               <input type="text" id="repository" class="form-control needs-validation" value="insanj.com" placeholder="repository" />
           </div>
 
-          <a href="#" id="run" class="btn btn-lg btn-secondary">⚡ Run</a>
+          <a href="#" id="run" class="btn btn-lg btn-secondary" data-toggle="tooltip" data-container="main" data-placement="bottom" data-original-title='Put in a username & repository to let 🤖 iggie pull the site in for you! 🌹'>⚡ Run</a>
         </p>
       </main>
 
@@ -164,17 +164,6 @@ window.onload = Wave.init
 $(function () {
   scrubAwayWaveUI();
   simulateTouch(2000);
-
-  $('main').popover({
-    container: 'main',
-    content: function() {
-      return 'Put in a username & repository to let 🤖 iggie pull the site in for you! 🌹';
-    },
-    placement : function() {
-      return "bottom";
-    },
-    trigger: 'hover'
-  });
 });
 
 $("#run").on("click", function() {

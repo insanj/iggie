@@ -29,7 +29,7 @@
             <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
               <div class="btn-group mt-2 mr-2" role="group">
                 <button type="button" class="btn btn-secondary disabled" id="back">◀ Back</button>
-                <button type="button" class="btn btn-secondary" id="refresh">🔃</button>
+                <button type="button" class="btn btn-secondary" id="refresh" data-toggle="tooltip" data-placement="bottom" title="🕷 Recrawl Site For Github Resources">🔃</button>
                 <button type="button" class="btn btn-secondary disabled" id="forward">Forward ▶</button>
               </div>
 
@@ -63,4 +63,11 @@
     <script src="../resources/bootstrap.js"></script>
     <script src="iggie.js"></script>
     <script src="run.js"></script>
+
+    <script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+});
+    </script>
+
 </body></html>

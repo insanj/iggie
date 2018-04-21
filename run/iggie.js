@@ -56,7 +56,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		var composedURL = precomposedURL + path;
+		var composedURL = precomposedURL + path + "?ref=" + ref; 
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
@@ -483,6 +483,11 @@ class iggie {
 			if (file.name == filename) {
 				historyHTMLFile = file;
 			}
+		}
+
+		if (historyHTMLFile == null) {
+			callback(null, null);
+			return;
 		}
 
 		var networker = new iggieNetworker(this.username, this.repository, this.auth);

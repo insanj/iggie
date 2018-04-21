@@ -33,6 +33,14 @@ function setSuccessURL(url) {
 	$("#current-alert").html("<a class='text-primary' href='" + url + "'>" + url + "</a>");
 }
 
+function setMessageString(str) {
+	$("#current-alert").removeClass("alert-danger");
+	$("#current-alert").removeClass("alert-primary");
+	$("#current-alert").addClass("alert-primary");
+
+	$("#current-alert").html(str);
+}
+
 var updateHistoryUI = function(displayURL, html, updateHistoryUICallback) {
 	$("#go-link").attr("href", displayURL);
 
@@ -129,9 +137,14 @@ function setHistory(delta) {
 
 	var littleHistorian = new iggie(username, repository, auth);
 	littleHistorian.getHistoryFilesHTML(filename, historyRef, historyFiles, function(url, html) {
-		updateHistoryUI(url, html, function() {
-			console.log("🎨 Rendered history!");
-		});
+		if (url == null || html == null) {
+			setMessageString("🎨 Reached end of history");
+			console.log("🔴 End of history");
+		} else {
+			updateHistoryUI(url, html, function() {
+				console.log("🎨 Rendered history!");
+			});
+		}
 	});
 }
 

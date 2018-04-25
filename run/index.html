@@ -8,14 +8,10 @@
     <link rel="icon" type="image/png" href="../resources/robot.png">
 
     <title>iggie</title>
-
-    <!-- Bootstrap core CSS -->
     <link href="../resources/bootstrap.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
     <link href="../resources/cover.css" rel="stylesheet">
-
     <link href="../resources/spinkit/spinner.css" rel="stylesheet">
+    <link href="../resources/dial/dial/dial.css" rel="stylesheet">
     <link href="run.css" rel="stylesheet">
   </head>
   <body class="text-center" style="z-index: 10;">
@@ -24,6 +20,10 @@
         <div class="inner">
           <a href="http://iggie.site"><h3 class="masthead-brand text-white">🤖 iggie</h3></a>
 
+          <nav class="nav nav-masthead justify-content-center">
+              <div id="dial" style="width:100px;" class="btn-group mt-2 mr-2" role="group">
+              </div>
+          </nav>
 
           <nav class="nav nav-masthead justify-content-center">
             <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
@@ -55,12 +55,10 @@
     <div id="site">
     </div>
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
     <script src="../resources/popper.js"></script>
     <script src="../resources/bootstrap.js"></script>
+    <script src="../resources/dial/dial/dial.js"></script>
     <script src="iggie.js"></script>
     <script src="run.js"></script>
 

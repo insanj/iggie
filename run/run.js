@@ -159,6 +159,36 @@ function safeSetHistory(delta) {
 
 //
 
+function loadDialForGithubCommits(dialGithubCommits) {
+	var uiItems = DialUIItem.convertGithubCommitRefsToDialUIItems(dialGithubCommits);
+	var uiItemCSS = DialUIItemCSS.fromDict({"width" : 20.0,"padding" : 2.0,"selectedWidth" : 30.0});
+	DialDrawer.drawDialUIItems(uiItems, uiItemCSS, "dial");
+
+	var dialCallback = function(target) {
+		var currentRef = iggieRefHistory[selectedHistory].substring(0, 3);
+		var currentRefIndex = selectedHistory;
+		var selectedRefIndex = -1;
+		for (var i = 0; i < dialGithubCommits.length; i++) {
+			var thisRef = dialGithubCommits[i].substring(0, 3);
+			if (thisRef == target.id) {
+				selectedRefIndex = i;
+			}
+		}
+
+		if (i < 0) {
+			throw "Dial unable to find ref selected";
+		}
+
+		var delta = currentRefIndex - selectedRefIndex;
+		safeSetHistory(delta);
+	};
+
+	var dialListener = new DialListener(dialCallback);
+	addDialListener(dialListener);
+}
+
+//
+
 setLoadingString("⬇ Connecting to Github...");
 
 var historyError;
@@ -176,6 +206,7 @@ historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 		$("#go").removeClass("disabled");
 
 		safeSetHistory(0);
+		loadDialForGithubCommits(commitRefs);
 		console.log("🎉 Loaded and set history!");
 	}
 });

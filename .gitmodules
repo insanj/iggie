@@ -2,3 +2,6 @@
 	path = resources/wave
 	url = https://github.com/insanj/wave
 	branch = master
+[submodule "resources/dial"]
+	path = resources/dial
+	url = https://github.com/insanj/dial

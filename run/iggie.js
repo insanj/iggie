@@ -24,9 +24,10 @@ class iggieGithubAuth {
 }
 
 class iggieURLBuilder {
-	constructor(username, repository, auth) {
+	constructor(username, repository, branch, auth) {
 		this.username = username;
 		this.repository = repository;
+		this.branch = branch;
 		this.auth = auth;
 	}
 
@@ -34,7 +35,8 @@ class iggieURLBuilder {
 		var urlHost = "https://api.github.com/";
 		var apiRepoPath = "repos/";
 		var apiCommitsPath = "/commits";
-		var composedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiCommitsPath;
+		const branchPath = +"?branch=" this.branch;
+		var composedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiCommitsPath + branchPath;
 		if (untilDate != null) {
 			composedURL = composedURL + "?until=" + untilDate;
 		}
@@ -46,17 +48,19 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		var refQuery = "?ref=" + ref;
-		var composedURL = precomposedURL + filename + refQuery;
+		const branchPath = +"?branch=" this.branch;
+		var refQuery = "&ref=" + ref;
+		var composedURL = precomposedURL + filename + branchPath + refQuery;
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
-	
+
 	buildGetFileInCommitURL(path, ref) {
 		var urlHost = "https://api.github.com/";
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		var composedURL = precomposedURL + path + "?ref=" + ref; 
+		const branchPath = +"?branch=" this.branch
+		var composedURL = precomposedURL + path + branchPath + "&ref=" + ref;
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
@@ -65,8 +69,9 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		var refQuery = "?ref=" + ref;
-		var composedURL = precomposedURL + refQuery;
+		const branchPath = +"?branch=" this.branch
+		var refQuery = "&ref=" + ref;
+		var composedURL = precomposedURL + branchPath + refQuery;
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
 
@@ -75,20 +80,22 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiTreesPath = "/git/trees/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiTreesPath;
-		var composedURL = precomposedURL + ref + "?recursive=1";
+		const branchPath = +"?branch=" this.branch;
+		var composedURL = precomposedURL + ref + branchPath + "&recursive=1";
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
 }
 
 class iggieNetworker {
-	constructor(username, repository, auth) {
+	constructor(username, repository, branch, auth) {
 		this.username = username;
 		this.repository = repository;
+		this.branch = branch;
 		this.auth = auth;
 	}
 
 	getGithubCommits(callback) {
-		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.branch, this.auth);
 		var	getPaginatedGithubCommitsURL = function(paginatedDate) {
 			return builder.buildCommitsURL(paginatedDate);
 		}
@@ -132,7 +139,7 @@ class iggieNetworker {
 	}
 
 	getGithubContentsOfFileInCommit(filename, ref, callback) {
-		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.branch, this.auth);
 		var url = builder.buildContentsOfCommitURL(filename, ref);
 		$.ajax({
 		  type: 'GET',
@@ -173,7 +180,7 @@ class iggieNetworker {
 	}
 
 	getGithubFileInCommit(path, ref, callback) {
-		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.branch, this.auth);
 		var url = builder.buildGetFileInCommitURL(path, ref);
 		$.ajax({
 		  type: 'GET',
@@ -232,7 +239,7 @@ class iggieNetworker {
 	}
 
 	getGithubContentsOfAllFilesInCommit(ref, callback) {
-		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.branch, this.auth);
 		var url = builder.buildContentsOfAllFilesInCommitURL(ref);
 		$.ajax({
 		  type: 'GET',
@@ -274,7 +281,7 @@ class iggieNetworker {
 	}
 
 	getGithubTreeForCommit(ref, callback) {
-		var builder = new iggieURLBuilder(this.username, this.repository, this.auth);
+		var builder = new iggieURLBuilder(this.username, this.repository, this.branch, this.auth);
 		var url = builder.buildTreeForCommitURL(ref);
 
 		$.ajax({
@@ -329,7 +336,7 @@ class iggieNetworker {
 		// How do we get the download_url? Simple! NOT from a github tree request,
 		// but from a normal dir request. Accept as a param a dict of paths
 		// to files that we already have. If there's something in there for this
-		// path, then boom, we're good. If not, make an additional call to 
+		// path, then boom, we're good. If not, make an additional call to
 		// get the contents of the directory that hosts the blob, even if
 		// its not a dir itself, then snatch the file from there, adding it
 		// and the rest of the files to the param dict for the rest of the
@@ -391,7 +398,7 @@ class iggieNetworker {
 					var regularPathFound = crawlingHTML.indexOf(encodedPath) >= 0;
 					var filePathIsInHTML = singleQuotesFound == true || doubleQuotesFound == true;
 
-					if (filePathIsInHTML == true && crawlingFile.type == "blob") {		
+					if (filePathIsInHTML == true && crawlingFile.type == "blob") {
 						iterateNetworker.findFullFileForPath(crawlingFile.path, commit, crawlingKnownFiles, function(crawlingFoundFile, newlyKnownFiles) {
 							if (crawlingFoundFile != null) {
 								var downloadURL = rawgitDownloadURL(crawlingFoundFile.download_url);
@@ -424,15 +431,16 @@ class iggieNetworker {
 			var totalIterations = treeResult.length-1;
 			iterateGithubTreeFile(networker, treeResult, 0, commitHTML, knownFilesDict, function(crawledHTML) {
 				callback(crawledHTML);
-			});	
+			});
 		});
 	}
 }
 
 class iggie {
-	constructor(username, repository, auth) {
+	constructor(username, repository, branch, auth) {
 		this.username = username;
 		this.repository = repository;
+		this.branch = branch;
 		this.auth = auth;
 	}
 
@@ -468,9 +476,9 @@ class iggie {
 	getHistoryFilesHTML(filename, ref, historyFiles, callback) {
 		/*
 		 Step one: grab and download index.html file
-		 Step two: create a source url array by looping through all paths/urs found in the index.html 
+		 Step two: create a source url array by looping through all paths/urs found in the index.html
 		 Step three: loop through all files in the file array and check for the following:
-		 	If 1: if the file path is found in source url array, 
+		 	If 1: if the file path is found in source url array,
 			Then 2:	replace the urls in the index.html for the file's download_url
 			If 2: if the file is a directory, and it is a part of a url in the source array,
 			Then 2: pull the contents of the directory from Github, recursively searching to resolve the full path
@@ -490,9 +498,9 @@ class iggie {
 			return;
 		}
 
-		var networker = new iggieNetworker(this.username, this.repository, this.auth);
+		var networker = new iggieNetworker(this.username, this.repository, this.branch, this.auth);
 		networker.getContentsForURL(historyHTMLFile.download_url, function(results) {
-			setLoadingString("🎉 Finished up homepage search, downloading additional resources...");	
+			setLoadingString("🎉 Finished up homepage search, downloading additional resources...");
 
 			networker.crawlHTMLAndResolveURLs(networker, ref, results, historyFiles, function (crawledResults) {
 				setLoadingString("🤖 We did it, iggie! Sending website your way...");
@@ -502,7 +510,7 @@ class iggie {
 	}
 
 	getCrawledHTMLFileWithResolvedURLs(ref, html, historyFiles, callback) {
-		var networker = new iggieNetworker(this.username, this.repository, this.auth);
+		var networker = new iggieNetworker(this.username, this.repository, this.branch, this.auth);
 		networker.crawlHTMLAndResolveURLs(networker, ref, html, historyFiles, function (crawledResults) {
 			callback(crawledResults);
 		});

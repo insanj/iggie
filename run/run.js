@@ -78,7 +78,7 @@ var updateHistoryUI = function(displayURL, html, updateHistoryUICallback) {
 	}
 
 	$("#site-iframe").ready(function() {
-		deploySite(html, headAgainstWallThreshold); // sometimes, it just takes a while...	
+		deploySite(html, headAgainstWallThreshold); // sometimes, it just takes a while...
 	});
 }
 
@@ -87,11 +87,12 @@ var updateHistoryUI = function(displayURL, html, updateHistoryUICallback) {
 var username = param("username");
 var repository = param("repository");
 var filename = param("filename");
+var branch = "iggie";
 var auth = new iggieGithubAuth("ddd03fe93afa0b9612aa", "fe7bba0464c06e72d02a417af28b1f9dbc744b6e");
 
 setLoadingString("🗃 Getting ready to dance...");
 
-/// 
+///
 
 var iggieHistory = [];
 var iggieRefHistory = [];
@@ -99,10 +100,10 @@ var selectedHistory = 0;
 
 function recrawlCurrentHistory() {
 	var ref = iggieRefHistory[selectedHistory];
-	var currentHTML = $("#site-iframe").contents().find("html")[0].innerHTML; 
+	var currentHTML = $("#site-iframe").contents().find("html")[0].innerHTML;
 	var files = iggieHistory[selectedHistory];
 
-	var recrawlHistorian = new iggie(username, repository, auth);
+	var recrawlHistorian = new iggie(username, repository, branch, auth);
 	recrawlHistorian.getCrawledHTMLFileWithResolvedURLs(ref, currentHTML, files, function (recrawledHTML) {
 		updateHistoryUI(null, recrawledHTML, function() {
 			console.log("🙌 Done recrawl & render!");
@@ -110,7 +111,7 @@ function recrawlCurrentHistory() {
 	});
 }
 
-function setHistory(delta) {	
+function setHistory(delta) {
 	var historyIndex = selectedHistory + delta;
 	if (historyIndex < 0 || historyIndex >= iggieHistory.length) {
 		selectedHistory = 0;
@@ -135,7 +136,7 @@ function setHistory(delta) {
 	var historyFiles = iggieHistory[selectedHistory];
 	var historyRef = iggieRefHistory[selectedHistory];
 
-	var littleHistorian = new iggie(username, repository, auth);
+	var littleHistorian = new iggie(username, repository, branch, auth);
 	littleHistorian.getHistoryFilesHTML(filename, historyRef, historyFiles, function(url, html) {
 		if (url == null || html == null) {
 			setMessageString("🎨 Reached end of history");
@@ -162,7 +163,7 @@ function safeSetHistory(delta) {
 setLoadingString("⬇ Connecting to Github...");
 
 var historyError;
-var historian = new iggie(username, repository, auth);
+var historian = new iggie(username, repository, branch, auth);
 historian.getHistoryOfAllFiles(function(commitRefs, commitFiles, error) {
 	if (error != null) {
 		historyError = error;
@@ -208,7 +209,7 @@ $("#forward").on("click", function(e) {
 
 $(document).keydown(function(e) {
 	e.preventDefault();
-	if (e.which == 37) { // left 
+	if (e.which == 37) { // left
 		if ($("#back").hasClass('disabled') == false) {
 			safeSetHistory(1);
 		}

@@ -35,10 +35,10 @@ class iggieURLBuilder {
 		var urlHost = "https://api.github.com/";
 		var apiRepoPath = "repos/";
 		var apiCommitsPath = "/commits";
-		const branchPath = +"?branch=" this.branch;
+		const branchPath = "?branch=" + this.branch;
 		var composedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiCommitsPath + branchPath;
 		if (untilDate != null) {
-			composedURL = composedURL + "?until=" + untilDate;
+			composedURL = composedURL + "&until=" + untilDate;
 		}
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
@@ -48,7 +48,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		const branchPath = +"?branch=" this.branch;
+		const branchPath = "?branch=" + this.branch;
 		var refQuery = "&ref=" + ref;
 		var composedURL = precomposedURL + filename + branchPath + refQuery;
 		return this.auth.appendClientURLQueryString(composedURL);
@@ -59,7 +59,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		const branchPath = +"?branch=" this.branch
+		const branchPath = "?branch=" + this.branch;
 		var composedURL = precomposedURL + path + branchPath + "&ref=" + ref;
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
@@ -69,7 +69,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiContentsPath = "/contents/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiContentsPath;
-		const branchPath = +"?branch=" this.branch
+		const branchPath = "?branch=" + this.branch;
 		var refQuery = "&ref=" + ref;
 		var composedURL = precomposedURL + branchPath + refQuery;
 		return this.auth.appendClientURLQueryString(composedURL);
@@ -80,7 +80,7 @@ class iggieURLBuilder {
 		var apiRepoPath = "repos/";
 		var apiTreesPath = "/git/trees/";
 		var precomposedURL = urlHost + apiRepoPath + this.username + "/" + this.repository + apiTreesPath;
-		const branchPath = +"?branch=" this.branch;
+		const branchPath = "?branch=" + this.branch;
 		var composedURL = precomposedURL + ref + branchPath + "&recursive=1";
 		return this.auth.appendClientURLQueryString(composedURL);
 	}
@@ -445,7 +445,7 @@ class iggie {
 	}
 
 	getHistory(filename, callback) {
-		var networker = new iggieNetworker(this.username, this.repository, this.auth);
+		var networker = new iggieNetworker(this.username, this.repository, this.branch, this.auth);
 		networker.getGithubCommits(function(commits, error) {
     		networker.getGithubContentsOfFileInCommits(networker, filename, commits, function(commitsContents, commitsURLs) {
     			callback(commitsContents, commitsURLs);
@@ -454,7 +454,7 @@ class iggie {
 	}
 
 	getHistoryOfAllFiles(callback) {
-		var networker = new iggieNetworker(this.username, this.repository, this.auth);
+		var networker = new iggieNetworker(this.username, this.repository, this.branch, this.auth);
 		networker.getGithubCommits(function(commits, error) {
 			if (error != null) {
 				callback(null, error);

@@ -88,7 +88,7 @@ var username = param("username");
 var repository = param("repository");
 var filename = param("filename");
 var branch = "iggie";
-var auth = new iggieGithubAuth("ddd03fe93afa0b9612aa", "fe7bba0464c06e72d02a417af28b1f9dbc744b6e");
+var auth = new iggieGithubAuth("ddd03fe93afa0b9612aa", "a87de25c1cc1250ffb876c95db7618e458cf9754");
 
 setLoadingString("🗃 Getting ready to dance...");
 
